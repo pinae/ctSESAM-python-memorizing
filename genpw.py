@@ -1,27 +1,30 @@
 #!/usr/bin/python3
 
-from hashlib import sha256
+from hashlib import pbkdf2_hmac
 
-big_letters = list('ABCDEFGHJKLMNPQRTUVWXYZ')
 small_letters = list('abcdefghijklmnopqrstuvwxyz')
+big_letters = list('ABCDEFGHJKLMNPQRTUVWXYZ')
 numbers = list('0123456789')
 special_characters = list('#!"§$%&/()[]{}=-_+*<>;:.')
-password_characters = special_characters + big_letters + small_letters + numbers
-salt = "c't ist toll!"
+password_characters = small_letters + big_letters + numbers + special_characters
+salt = "pepper"
 
 
-def convert_bytes_to_password(bytes):
-    number = int.from_bytes(bytes, byteorder='big')
+def convert_bytes_to_password(hashed_bytes, length):
+    number = int.from_bytes(hashed_bytes, byteorder='big')
     string = ''
-    while number >= len(password_characters):
+    while number >= len(password_characters) and len(string) < length:
         string = string + password_characters[number % len(password_characters)]
         number = number // len(password_characters) - 1
-    string = string + password_characters[number]
+    if number < len(password_characters) and len(string) < length:
+        string = string + password_characters[number]
     return string
 
 domain = input('Domain: ')
+while len(domain) < 1:
+    print('Bitte gib eine Domain an, für die das Passwort generiert werden soll.')
+    domain = input('Domain: ')
 master_password = input('Masterpasswort: ')
-hasher = sha256()
-hash_string = domain + master_password + salt
-hasher.update(hash_string.encode('utf-8'))
-print('Passwort: ' + convert_bytes_to_password(hasher.digest())[-10:])
+hash_string = domain + master_password
+hashed_bytes = pbkdf2_hmac('sha512', hash_string.encode('utf-8'), salt.encode('utf-8'), 4096)
+print('Passwort: ' + convert_bytes_to_password(hashed_bytes, 10))
