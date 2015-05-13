@@ -15,7 +15,7 @@ def convert_bytes_to_password(hashed_bytes, length):
     string = ''
     while number >= len(password_characters) and len(string) < length:
         string = string + password_characters[number % len(password_characters)]
-        number = number // len(password_characters) - 1
+        number = number // len(password_characters)
     if number < len(password_characters) and len(string) < length:
         string = string + password_characters[number]
     return string
