@@ -20,11 +20,11 @@ def convert_bytes_to_password(hashed_bytes, length):
         string = string + password_characters[number]
     return string
 
+master_password = input('Masterpasswort: ')
 domain = input('Domain: ')
 while len(domain) < 1:
     print('Bitte gib eine Domain an, für die das Passwort generiert werden soll.')
     domain = input('Domain: ')
-master_password = input('Masterpasswort: ')
 hash_string = domain + master_password
 hashed_bytes = pbkdf2_hmac('sha512', hash_string.encode('utf-8'), salt.encode('utf-8'), 4096)
 print('Passwort: ' + convert_bytes_to_password(hashed_bytes, 10))
