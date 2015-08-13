@@ -23,26 +23,29 @@ class TestPasswordSetting(unittest.TestCase):
     def test_character_set(self):
         s = PasswordSetting("unit.test")
         self.assertFalse(s.use_custom_character_set())
-        self.assertEqual("", s.get_custom_character_set())
+        self.assertEqual("abcdefghijklmnopqrstuvwxyz" +
+            "ABCDEFGHJKLMNPQRTUVWXYZ" +
+            "0123456789" +
+            "#!\"§$%&/()[]{}=-_+*<>;:.", s.get_character_set())
         s.set_custom_character_set("&=Oo0wWsS$#uUvVzZ")
         self.assertTrue(s.use_custom_character_set())
-        self.assertEqual("&=Oo0wWsS$#uUvVzZ", s.get_custom_character_set())
+        self.assertEqual("&=Oo0wWsS$#uUvVzZ", s.get_character_set())
         s.set_custom_character_set(
             "abcdefghijklmnopqrstuvwxyz" +
             "ABCDEFGHJKLMNPQRTUVWXYZ" +
             "0123456789" +
             "#!\"§$%&/()[]{}=-_+*<>;:.")
         self.assertFalse(s.use_custom_character_set())
-        self.assertEqual("", s.get_custom_character_set())
-
-    def test_get_default_character_set(self):
-        s = PasswordSetting("unit.test")
+        self.assertEqual("abcdefghijklmnopqrstuvwxyz" +
+            "ABCDEFGHJKLMNPQRTUVWXYZ" +
+            "0123456789" +
+            "#!\"§$%&/()[]{}=-_+*<>;:.", s.get_character_set())
         s.set_use_letters(False)
-        self.assertEqual("0123456789#!\"§$%&/()[]{}=-_+*<>;:.", s.get_default_character_set())
+        self.assertEqual("0123456789#!\"§$%&/()[]{}=-_+*<>;:.", s.get_character_set())
         s.set_use_letters(True)
         s.set_use_digits(False)
         s.set_use_extra(False)
-        self.assertEqual("abcdefghijklmnopqrstuvwxyzABCDEFGHJKLMNPQRTUVWXYZ", s.get_default_character_set())
+        self.assertEqual("abcdefghijklmnopqrstuvwxyzABCDEFGHJKLMNPQRTUVWXYZ", s.get_character_set())
 
     def test_get_character_set(self):
         s = PasswordSetting("unit.test")
@@ -105,22 +108,16 @@ class TestPasswordSetting(unittest.TestCase):
         self.assertEqual(213, json.loads(s.to_json())["iterations"])
         self.assertIn("length", json.loads(s.to_json()))
         self.assertEqual(14, json.loads(s.to_json())["length"])
-        self.assertIn("useCustom", json.loads(s.to_json()))
-        self.assertTrue(json.loads(s.to_json())["useCustom"])
-        self.assertIn("customCharacterSet", json.loads(s.to_json()))
-        self.assertEqual("XVLCWKHGFQUIAEOSNRTDYÜÖÄPZBMJ", json.loads(s.to_json())["customCharacterSet"])
+        self.assertIn("usedCharacters", json.loads(s.to_json()))
+        self.assertEqual("XVLCWKHGFQUIAEOSNRTDYÜÖÄPZBMJ", json.loads(s.to_json())["usedCharacters"])
         self.assertIn("notes", json.loads(s.to_json()))
         self.assertEqual("Some note.", json.loads(s.to_json())["notes"])
 
     def test_load_from_json(self):
         json_str = "{\"domain\": \"unit.test\", \"username\": \"testilinius\", " +\
                    "\"notes\": \"interesting note\", \"legacyPassword\": \"rtSr?bS,mi\", " +\
-                   "\"useLowerCase\": true, \"useUpperCase\": false, \"useDigits\": true, " +\
-                   "\"useExtra\": false, \"useCustom\": true, \"avoidAmbiguous\": true, " +\
-                   "\"customCharacterSet\": \"AEIOUaeiou\", \"iterations\": 5341, " +\
-                   "\"length\": 16, \"salt\": \"ZmFzY2luYXRpbmc=\", \"forceLowerCase\": false, " +\
-                   "\"forceUpperCase\": true, \"forceDigits\": true, \"forceExtra\": true, " +\
-                   "\"forceRegexValidation\": false, \"validatorRegEx\": \"[A-Za-z0-9]+\", " +\
+                   "\"usedCharacters\": \"AEIOUaeiou\", \"iterations\": 5341, " +\
+                   "\"length\": 16, \"salt\": \"ZmFzY2luYXRpbmc=\", " +\
                    "\"cDate\": \"2001-01-01T02:14:12\", \"mDate\": \"2005-01-01T01:14:12\"}"
         s = PasswordSetting(json.loads(json_str)["domain"])
         s.load_from_json(json_str)
@@ -128,13 +125,12 @@ class TestPasswordSetting(unittest.TestCase):
         self.assertEquals("testilinius", s.get_username())
         self.assertEquals("interesting note", s.get_notes())
         self.assertEquals("rtSr?bS,mi", s.get_legacy_password())
-        self.assertTrue(s.use_lower_case())
+        self.assertFalse(s.use_lower_case())
         self.assertFalse(s.use_upper_case())
-        self.assertTrue(s.use_digits())
+        self.assertFalse(s.use_digits())
         self.assertFalse(s.use_extra())
         self.assertTrue(s.use_custom_character_set())
-        self.assertTrue(s.avoid_ambiguous_characters())
-        self.assertEquals("AEIOUaeiou", s.get_custom_character_set())
+        self.assertEquals("AEIOUaeiou", s.get_character_set())
         self.assertEquals(5341, s.get_iterations())
         self.assertEquals(16, s.get_length())
         expected_salt = "fascinating".encode('utf-8')

@@ -16,21 +16,15 @@ DEFAULT_CHARACTER_SET_EXTRA = '#!"§$%&/()[]{}=-_+*<>;:.'
 class PasswordSetting(object):
     def __init__(self, domain):
         self.domain = domain
-        self.salt = DEFAULT_SALT
-        self.creation_date = datetime.now()
-        self.modification_date = self.creation_date
         self.username = None
         self.legacy_password = None
-        self.use_lower = True
-        self.use_upper = True
-        self.use_digit_characters = True
-        self.use_special_characters = True
-        self.use_custom = False
-        self.avoid_ambiguous = True
-        self.custom_character_set = None
-        self.length = 10
-        self.iterations = 4096
         self.notes = None
+        self.iterations = 4096
+        self.salt = DEFAULT_SALT
+        self.length = 10
+        self.creation_date = datetime.now()
+        self.modification_date = self.creation_date
+        self.used_characters = self.get_default_character_set()
         self.synced = False
 
     def get_domain(self):
@@ -38,6 +32,7 @@ class PasswordSetting(object):
 
     def set_domain(self, domain):
         self.domain = domain
+        self.synced = False
 
     def get_username(self):
         if self.username:
@@ -47,6 +42,7 @@ class PasswordSetting(object):
 
     def set_username(self, username):
         self.username = username
+        self.synced = False
 
     def get_legacy_password(self):
         if self.legacy_password:
@@ -56,78 +52,118 @@ class PasswordSetting(object):
 
     def set_legacy_password(self, legacy_password):
         self.legacy_password = legacy_password
+        self.synced = False
 
     def use_letters(self):
-        return self.use_lower and self.use_upper
+        return self.used_characters[:len(DEFAULT_CHARACTER_SET_LOWER_CASE + DEFAULT_CHARACTER_SET_UPPER_CASE)] == \
+            DEFAULT_CHARACTER_SET_LOWER_CASE + DEFAULT_CHARACTER_SET_UPPER_CASE
 
     def set_use_letters(self, use_letters):
-        self.use_lower = use_letters
-        self.use_upper = use_letters
+        old_character_set = self.used_characters
+        pos = 0
+        while pos < len(self.used_characters):
+            if self.used_characters[pos] in DEFAULT_CHARACTER_SET_LOWER_CASE + DEFAULT_CHARACTER_SET_UPPER_CASE:
+                self.used_characters = self.used_characters[:pos] + self.used_characters[pos + 1:]
+            else:
+                pos += 1
+        if use_letters:
+            self.used_characters = DEFAULT_CHARACTER_SET_LOWER_CASE + DEFAULT_CHARACTER_SET_UPPER_CASE + \
+                self.used_characters
+        if old_character_set != self.used_characters:
+            self.synced = False
 
     def use_lower_case(self):
-        return self.use_lower
+        return self.used_characters[:len(DEFAULT_CHARACTER_SET_LOWER_CASE)] == DEFAULT_CHARACTER_SET_LOWER_CASE
 
     def set_use_lower_case(self, use_lower_case):
-        self.use_lower = use_lower_case
+        old_character_set = self.used_characters
+        pos = 0
+        while pos < len(self.used_characters):
+            if self.used_characters[pos] in DEFAULT_CHARACTER_SET_LOWER_CASE:
+                self.used_characters = self.used_characters[:pos] + self.used_characters[pos + 1:]
+            else:
+                pos += 1
+        if use_lower_case:
+            self.used_characters = DEFAULT_CHARACTER_SET_LOWER_CASE + self.used_characters
+        if old_character_set != self.used_characters:
+            self.synced = False
 
     def use_upper_case(self):
-        return self.use_upper
+        return self.used_characters[
+            len(DEFAULT_CHARACTER_SET_LOWER_CASE):len(
+                DEFAULT_CHARACTER_SET_LOWER_CASE + DEFAULT_CHARACTER_SET_UPPER_CASE)] \
+            == DEFAULT_CHARACTER_SET_UPPER_CASE
 
     def set_use_upper_case(self, use_upper_case):
-        self.use_upper = use_upper_case
+        old_character_set = self.used_characters
+        pos = 0
+        while pos < len(self.used_characters):
+            if self.used_characters[pos] in DEFAULT_CHARACTER_SET_UPPER_CASE:
+                self.used_characters = self.used_characters[:pos] + self.used_characters[pos + 1:]
+            else:
+                pos += 1
+        if use_upper_case:
+            self.used_characters = self.used_characters[:len(DEFAULT_CHARACTER_SET_LOWER_CASE)] + \
+                DEFAULT_CHARACTER_SET_LOWER_CASE + self.used_characters[len(DEFAULT_CHARACTER_SET_LOWER_CASE):]
+        if old_character_set != self.used_characters:
+            self.synced = False
 
     def use_digits(self):
-        return self.use_digit_characters
+        return self.used_characters[
+            len(DEFAULT_CHARACTER_SET_LOWER_CASE + DEFAULT_CHARACTER_SET_UPPER_CASE):len(
+                DEFAULT_CHARACTER_SET_LOWER_CASE + DEFAULT_CHARACTER_SET_UPPER_CASE + DEFAULT_CHARACTER_SET_DIGITS)] \
+            == DEFAULT_CHARACTER_SET_DIGITS
 
     def set_use_digits(self, use_digits):
-        self.use_digit_characters = use_digits
+        old_character_set = self.used_characters
+        pos = 0
+        while pos < len(self.used_characters):
+            if self.used_characters[pos] in DEFAULT_CHARACTER_SET_DIGITS:
+                self.used_characters = self.used_characters[:pos] + self.used_characters[pos + 1:]
+            else:
+                pos += 1
+        if use_digits:
+            self.used_characters = self.used_characters[
+                :len(DEFAULT_CHARACTER_SET_LOWER_CASE + DEFAULT_CHARACTER_SET_UPPER_CASE)] + \
+                DEFAULT_CHARACTER_SET_DIGITS + self.used_characters[
+                    len(DEFAULT_CHARACTER_SET_LOWER_CASE + DEFAULT_CHARACTER_SET_UPPER_CASE):]
+        if old_character_set != self.used_characters:
+            self.synced = False
 
     def use_extra(self):
-        return self.use_special_characters
+        return self.used_characters[
+            len(DEFAULT_CHARACTER_SET_LOWER_CASE + DEFAULT_CHARACTER_SET_UPPER_CASE + DEFAULT_CHARACTER_SET_DIGITS):] \
+            == DEFAULT_CHARACTER_SET_EXTRA
 
     def set_use_extra(self, use_extra):
-        self.use_special_characters = use_extra
+        old_character_set = self.used_characters
+        pos = 0
+        while pos < len(self.used_characters):
+            if self.used_characters[pos] in DEFAULT_CHARACTER_SET_EXTRA:
+                self.used_characters = self.used_characters[:pos] + self.used_characters[pos + 1:]
+            else:
+                pos += 1
+        if use_extra:
+            self.used_characters += DEFAULT_CHARACTER_SET_EXTRA
+        if old_character_set != self.used_characters:
+            self.synced = False
 
     def use_custom_character_set(self):
-        return self.use_custom
+        return not self.used_characters == DEFAULT_CHARACTER_SET_LOWER_CASE + DEFAULT_CHARACTER_SET_UPPER_CASE + \
+            DEFAULT_CHARACTER_SET_DIGITS + DEFAULT_CHARACTER_SET_EXTRA
 
-    def avoid_ambiguous_characters(self):
-        return self.avoid_ambiguous
-
-    def set_avoid_ambiguous_characters(self, avoid_ambiguous_characters):
-        self.avoid_ambiguous = avoid_ambiguous_characters
-
-    def get_default_character_set(self):
-        character_set = ""
-        if self.use_lower_case():
-            character_set += DEFAULT_CHARACTER_SET_LOWER_CASE
-        if self.use_upper_case():
-            character_set += DEFAULT_CHARACTER_SET_UPPER_CASE
-        if self.use_digits():
-            character_set += DEFAULT_CHARACTER_SET_DIGITS
-        if self.use_extra():
-            character_set += DEFAULT_CHARACTER_SET_EXTRA
-        return character_set
-
-    def get_custom_character_set(self):
-        if self.custom_character_set:
-            return self.custom_character_set
-        else:
-            return ""
-
-    def set_custom_character_set(self, character_set):
-        if character_set == self.get_default_character_set():
-            self.use_custom = False
-            self.custom_character_set = None
-        else:
-            self.use_custom = True
-            self.custom_character_set = character_set
+    @staticmethod
+    def get_default_character_set():
+        return DEFAULT_CHARACTER_SET_LOWER_CASE + DEFAULT_CHARACTER_SET_UPPER_CASE + \
+            DEFAULT_CHARACTER_SET_DIGITS + DEFAULT_CHARACTER_SET_EXTRA
 
     def get_character_set(self):
-        if self.use_custom_character_set():
-            return self.get_custom_character_set()
-        else:
-            return self.get_default_character_set()
+        return self.used_characters
+
+    def set_custom_character_set(self, character_set):
+        if self.used_characters != character_set:
+            self.synced = False
+        self.used_characters = character_set
 
     def get_salt(self):
         return self.salt
@@ -138,8 +174,12 @@ class PasswordSetting(object):
 
     def set_salt(self, salt):
         if type(salt) == bytes:
+            if self.salt != salt:
+                self.synced = False
             self.salt = salt
         elif type(salt) == str:
+            if self.salt != salt.encode('utf-8'):
+                self.synced = False
             self.salt = salt.encode('utf-8')
         else:
             raise TypeError("The salt should be bytes.")
@@ -148,18 +188,24 @@ class PasswordSetting(object):
         return self.length
 
     def set_length(self, length):
+        if self.length != length:
+            self.synced = False
         self.length = length
 
     def get_iterations(self):
         return self.iterations
 
     def set_iterations(self, iterations):
+        if self.iterations != iterations:
+            self.synced = False
         self.iterations = iterations
 
     def get_creation_date(self):
         return self.creation_date.strftime("%Y-%m-%dT%H:%M:%S")
 
     def set_creation_date(self, creation_date):
+        if self.creation_date != creation_date:
+            self.synced = False
         try:
             self.creation_date = datetime.strptime(creation_date, "%Y-%m-%dT%H:%M:%S")
         except ValueError:
@@ -172,6 +218,8 @@ class PasswordSetting(object):
         return self.modification_date.strftime("%Y-%m-%dT%H:%M:%S")
 
     def set_modification_date(self, modification_date=None):
+        if modification_date and self.modification_date != modification_date:
+            self.synced = False
         if type(modification_date) == str:
             try:
                 self.modification_date = datetime.strptime(modification_date, "%Y-%m-%dT%H:%M:%S")
@@ -184,7 +232,6 @@ class PasswordSetting(object):
             print("The modification date was before the creation Date. " +
                   "Setting the creation date to the earlier date.")
             self.creation_date = self.modification_date
-        self.synced = False
 
     def get_notes(self):
         if self.notes:
@@ -202,24 +249,20 @@ class PasswordSetting(object):
         self.synced = is_synced
 
     def to_json(self):
-        domain_object = {
-            "domain": self.get_domain(),
-            "useLowerCase": self.use_lower_case(),
-            "useUpperCase": self.use_upper_case(),
-            "useDigits": self.use_digits(),
-            "useExtra": self.use_extra(),
-            "iterations": self.get_iterations(),
-            "length": self.get_length(),
-            "cDate": self.get_creation_date(),
-            "mDate": self.get_modification_date()
-        }
-        if self.salt:
-            domain_object["salt"] = str(b64encode(self.get_salt()))
-        if self.use_custom_character_set():
-            domain_object["useCustom"] = True
-            domain_object["customCharacterSet"] = self.get_custom_character_set()
+        domain_object = {"domain": self.get_domain()}
+        if self.get_username():
+            domain_object["username"] = self.get_username()
+        if self.get_legacy_password():
+            domain_object["legacyPassword"] = self.get_legacy_password()
         if self.notes:
             domain_object["notes"] = self.get_notes()
+        domain_object["iterations"] = self.get_iterations()
+        if self.salt:
+            domain_object["salt"] = str(b64encode(self.get_salt()))
+        domain_object["length"] = self.get_length()
+        domain_object["cDate"] = self.get_creation_date()
+        domain_object["mDate"] = self.get_modification_date()
+        domain_object["usedCharacters"] = self.get_character_set()
         return json.dumps(domain_object)
 
     def load_from_json(self, loaded_setting):
@@ -230,28 +273,17 @@ class PasswordSetting(object):
             self.set_username(domain_object["username"])
         if "legacyPassword" in domain_object:
             self.set_legacy_password(domain_object["legacyPassword"])
+        if "notes" in domain_object:
+            self.set_notes(domain_object["notes"])
+        if "iterations" in domain_object:
+            self.set_iterations(domain_object["iterations"])
         if "salt" in domain_object:
             self.set_salt(b64decode(domain_object["salt"]))
+        if "length" in domain_object:
+            self.set_length(domain_object["length"])
         if "cDate" in domain_object:
             self.set_creation_date(domain_object["cDate"])
         if "mDate" in domain_object:
             self.set_modification_date(domain_object["mDate"])
-        if "iterations" in domain_object:
-            self.set_iterations(domain_object["iterations"])
-        if "length" in domain_object:
-            self.set_length(domain_object["length"])
-        if "useUpperCase" in domain_object:
-            self.set_use_upper_case(domain_object["useUpperCase"])
-        if "useLowerCase" in domain_object:
-            self.set_use_lower_case(domain_object["useLowerCase"])
-        if "useDigits" in domain_object:
-            self.set_use_digits(domain_object["useDigits"])
-        if "useExtra" in domain_object:
-            self.set_use_extra(domain_object["useExtra"])
-        if "avoidAmbiguous" in domain_object:
-            self.set_avoid_ambiguous_characters(domain_object["avoidAmbiguous"])
-        if "useCustom" in domain_object and domain_object["useCustom"] and \
-           "customCharacterSet" in domain_object and len(domain_object["customCharacterSet"]) > 0:
-            self.set_custom_character_set(domain_object["customCharacterSet"])
-        if "notes" in domain_object:
-            self.set_notes(domain_object["notes"])
+        if "usedCharacters" in domain_object:
+            self.set_custom_character_set(domain_object["usedCharacters"])
