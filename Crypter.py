@@ -19,7 +19,6 @@ class Crypter(object):
 
     def encrypt(self, data):
         aes_object = AES.new(self.key, AES.MODE_CBC, self.iv)
-        print(len(self.add_pkcs7_padding(data)))
         return aes_object.encrypt(self.add_pkcs7_padding(data))
 
     @staticmethod
