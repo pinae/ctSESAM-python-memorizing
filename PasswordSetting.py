@@ -200,6 +200,9 @@ class PasswordSetting(object):
             self.synced = False
         self.iterations = iterations
 
+    def get_c_date(self):
+        return self.creation_date
+
     def get_creation_date(self):
         return self.creation_date.strftime("%Y-%m-%dT%H:%M:%S")
 
@@ -213,6 +216,9 @@ class PasswordSetting(object):
             self.creation_date = datetime.now()
         if self.modification_date < self.creation_date:
             self.modification_date = self.creation_date
+
+    def get_m_date(self):
+        return self.modification_date
 
     def get_modification_date(self):
         return self.modification_date.strftime("%Y-%m-%dT%H:%M:%S")
@@ -248,7 +254,7 @@ class PasswordSetting(object):
     def set_synced(self, is_synced=True):
         self.synced = is_synced
 
-    def to_json(self):
+    def to_dict(self):
         domain_object = {"domain": self.get_domain()}
         if self.get_username():
             domain_object["username"] = self.get_username()
@@ -263,27 +269,26 @@ class PasswordSetting(object):
         domain_object["cDate"] = self.get_creation_date()
         domain_object["mDate"] = self.get_modification_date()
         domain_object["usedCharacters"] = self.get_character_set()
-        return json.dumps(domain_object)
+        return domain_object
 
-    def load_from_json(self, loaded_setting):
-        domain_object = json.loads(loaded_setting)
-        if "domain" in domain_object:
-            self.set_domain(domain_object["domain"])
-        if "username" in domain_object:
-            self.set_username(domain_object["username"])
-        if "legacyPassword" in domain_object:
-            self.set_legacy_password(domain_object["legacyPassword"])
-        if "notes" in domain_object:
-            self.set_notes(domain_object["notes"])
-        if "iterations" in domain_object:
-            self.set_iterations(domain_object["iterations"])
-        if "salt" in domain_object:
-            self.set_salt(b64decode(domain_object["salt"]))
-        if "length" in domain_object:
-            self.set_length(domain_object["length"])
-        if "cDate" in domain_object:
-            self.set_creation_date(domain_object["cDate"])
-        if "mDate" in domain_object:
-            self.set_modification_date(domain_object["mDate"])
-        if "usedCharacters" in domain_object:
-            self.set_custom_character_set(domain_object["usedCharacters"])
+    def load_from_dict(self, loaded_setting):
+        if "domain" in loaded_setting:
+            self.set_domain(loaded_setting["domain"])
+        if "username" in loaded_setting:
+            self.set_username(loaded_setting["username"])
+        if "legacyPassword" in loaded_setting:
+            self.set_legacy_password(loaded_setting["legacyPassword"])
+        if "notes" in loaded_setting:
+            self.set_notes(loaded_setting["notes"])
+        if "iterations" in loaded_setting:
+            self.set_iterations(loaded_setting["iterations"])
+        if "salt" in loaded_setting:
+            self.set_salt(b64decode(loaded_setting["salt"]))
+        if "length" in loaded_setting:
+            self.set_length(loaded_setting["length"])
+        if "cDate" in loaded_setting:
+            self.set_creation_date(loaded_setting["cDate"])
+        if "mDate" in loaded_setting:
+            self.set_modification_date(loaded_setting["mDate"])
+        if "usedCharacters" in loaded_setting:
+            self.set_custom_character_set(loaded_setting["usedCharacters"])
