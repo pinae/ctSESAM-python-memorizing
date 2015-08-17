@@ -264,7 +264,7 @@ class PasswordSetting(object):
             domain_object["notes"] = self.get_notes()
         domain_object["iterations"] = self.get_iterations()
         if self.salt:
-            domain_object["salt"] = str(b64encode(self.get_salt()))
+            domain_object["salt"] = str(b64encode(self.get_salt()), encoding='utf-8')
         domain_object["length"] = self.get_length()
         domain_object["cDate"] = self.get_creation_date()
         domain_object["mDate"] = self.get_modification_date()

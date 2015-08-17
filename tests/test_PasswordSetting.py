@@ -103,7 +103,7 @@ class TestPasswordSetting(unittest.TestCase):
         self.assertIn("mDate", s.to_dict())
         self.assertEqual("2005-01-01T01:14:12", s.to_dict()["mDate"])
         self.assertIn("salt", s.to_dict())
-        self.assertEqual(str(b64encode("something".encode('utf-8'))), s.to_dict()["salt"])
+        self.assertEqual(str(b64encode("something".encode('utf-8')), encoding='utf-8'), s.to_dict()["salt"])
         self.assertIn("iterations", s.to_dict())
         self.assertEqual(213, s.to_dict()["iterations"])
         self.assertIn("length", s.to_dict())
