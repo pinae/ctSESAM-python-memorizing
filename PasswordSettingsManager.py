@@ -31,7 +31,7 @@ class PasswordSettingsManager(object):
         if os.path.isfile(self.settings_file):
             crypter = Crypter(password)
             file = open(self.settings_file, 'br')
-            saved_settings = json.loads(Packer.decompress(crypter.decrypt(file.read())))
+            saved_settings = json.loads(str(Packer.decompress(crypter.decrypt(file.read())), encoding='utf-8'))
             for data_set in saved_settings['settings']:
                 found = False
                 i = 0
@@ -42,11 +42,11 @@ class PasswordSettingsManager(object):
                         if datetime.strptime(data_set['mDate'], "%Y-%m-%dT%H:%M:%S") > setting.get_m_date():
                             setting.load_from_dict(data_set)
                             setting.set_synced(setting.get_domain() in saved_settings['synced'])
-                            i += 1
+                    i += 1
                 if not found:
                     new_setting = PasswordSetting(data_set['domain'])
                     new_setting.load_from_dict(data_set)
-                    new_setting.set_synced(setting.get_domain() in saved_settings['synced'])
+                    new_setting.set_synced(new_setting.get_domain() in saved_settings['synced'])
                     self.settings.append(new_setting)
             file.close()
 

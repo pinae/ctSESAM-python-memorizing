@@ -46,3 +46,51 @@ class TestPasswordSettingsManager(unittest.TestCase):
         self.assertEqual(10, data['settings'][0]['length'])
         self.assertEqual('hugo.com', data['settings'][1]['domain'])
         self.assertEqual(12, data['settings'][1]['length'])
+
+    def test_load_settings_from_file(self):
+        settings = {
+            'settings': [
+                {
+                    'domain': 'unit.test',
+                    'length': 11,
+                    'iterations': 5000,
+                    'notes': 'Nice note!',
+                    'cDate': '2011-02-12T11:07:31',
+                    'mDate': '2011-02-12T11:07:32'
+                },
+                {
+                    'domain': 'some.domain',
+                    'length': 4,
+                    'usedCharacters': '6478593021',
+                    'cDate': '2013-06-17T04:03:41',
+                    'mDate': '2014-08-02T10:37:12'
+                }
+            ],
+            'synced': []
+        }
+        crypter = Crypter('xyz')
+        f = open(os.path.expanduser('~/.ctSESAM_test.pws'), 'bw')
+        f.write(crypter.encrypt(Packer.compress(json.dumps(settings).encode('utf-8'))))
+        f.close()
+        self.manager.load_settings_from_file('xyz')
+        self.assertEqual(['unit.test', 'some.domain'], self.manager.get_domain_list())
+        self.assertEqual(11, self.manager.get_setting('unit.test').get_length())
+        self.assertEqual(5000, self.manager.get_setting('unit.test').get_iterations())
+        self.assertEqual('Nice note!', self.manager.get_setting('unit.test').get_notes())
+        self.assertEqual(4, self.manager.get_setting('some.domain').get_length())
+        self.assertEqual('6478593021', self.manager.get_setting('some.domain').get_character_set())
+
+    def test_save_setting(self):
+        setting = self.manager.get_setting('hugo.me')
+        setting.set_length(6)
+        self.manager.save_setting(setting)
+        self.assertIn('hugo.me', self.manager.get_domain_list())
+        self.assertEqual(6, self.manager.get_setting('hugo.me').get_length())
+
+    def test_delete_setting(self):
+        setting = self.manager.get_setting('hugo.me')
+        setting.set_length(6)
+        self.manager.save_setting(setting)
+        self.assertIn('hugo.me', self.manager.get_domain_list())
+        self.manager.delete_setting(setting)
+        self.assertNotIn('hugo.me', self.manager.get_domain_list())
