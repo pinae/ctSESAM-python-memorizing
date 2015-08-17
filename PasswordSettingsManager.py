@@ -162,7 +162,7 @@ class PasswordSettingsManager(object):
         :return:
         """
         crypter = Crypter(password)
-        self.remote_data = json.loads(Packer.decompress(crypter.decrypt(b64decode(data))))
+        self.remote_data = json.loads(str(Packer.decompress(crypter.decrypt(b64decode(data))), encoding='utf-8'))
         update_remote = False
         for data_set in self.remote_data:
             found = False
@@ -179,7 +179,10 @@ class PasswordSettingsManager(object):
                             setting.set_synced(True)
                             i += 1
                     else:
+                        i += 1
                         update_remote = True
+                else:
+                    i += 1
             if not found:
                 new_setting = PasswordSetting(data_set['domain'])
                 new_setting.load_from_dict(data_set)

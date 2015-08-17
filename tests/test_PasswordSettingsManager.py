@@ -166,3 +166,72 @@ class TestPasswordSettingsManager(unittest.TestCase):
             b64encode(crypter.encrypt(Packer.compress(json.dumps(settings['settings']).encode('utf-8')))),
             self.manager.get_export_data('xyz')
         )
+
+    def test_update_from_export_data(self):
+        remote_data = [
+            {
+                'domain': 'unit.test',
+                'length': 12,
+                'iterations': 5001,
+                'notes': 'another note!',
+                'salt': 'cGVwcGVy',
+                'usedCharacters': 'abcdefghijklmnopqrstuvwxyzABCDEFGHJKLMNPQRTUVWXYZ0123456789',
+                'cDate': '2011-02-12T11:07:31',
+                'mDate': '2013-07-12T14:46:11'
+            },
+            {
+                'domain': 'some.domain',
+                'length': 4,
+                'iterations': 4097,
+                'salt': 'cGVwcGVy',
+                'usedCharacters': '6478593021',
+                'cDate': '2013-06-17T04:03:41',
+                'mDate': '2014-08-02T10:37:11'
+            },
+            {
+                'domain': 'third.domain',
+                'length': 10,
+                'iterations': 4098,
+                'salt': 'cGVwcGVy',
+                'usedCharacters': 'aeiou',
+                'cDate': '2013-06-17T04:03:41',
+                'mDate': '2014-08-02T10:37:11'
+            }
+        ]
+        settings = {
+            'settings': [
+                {
+                    'domain': 'unit.test',
+                    'length': 11,
+                    'iterations': 5000,
+                    'notes': 'Nice note!',
+                    'salt': 'cGVwcGVy',
+                    'usedCharacters': 'abcdefghijklmnopqrstuvwxyzABCDEFGHJKLMNPQRTUVWXYZ0123456789' +
+                                      '#!"§$%&/()[]{}=-_+*<>;:.',
+                    'cDate': '2011-02-12T11:07:31',
+                    'mDate': '2011-02-12T11:07:32'
+                },
+                {
+                    'domain': 'some.domain',
+                    'length': 4,
+                    'iterations': 4096,
+                    'salt': 'cGVwcGVy',
+                    'usedCharacters': '6478593021',
+                    'cDate': '2013-06-17T04:03:41',
+                    'mDate': '2014-08-02T10:37:12'
+                }
+            ],
+            'synced': []
+        }
+        crypter = Crypter('xyz')
+        f = open(os.path.expanduser('~/.ctSESAM_test.pws'), 'bw')
+        f.write(crypter.encrypt(Packer.compress(json.dumps(settings).encode('utf-8'))))
+        f.close()
+        self.manager.load_settings_from_file('xyz')
+        self.assertTrue(self.manager.update_from_export_data(
+            'xyz',
+            b64encode(crypter.encrypt(Packer.compress(json.dumps(remote_data).encode('utf-8'))))))
+        self.assertEqual(['unit.test', 'some.domain', 'third.domain'], self.manager.get_domain_list())
+        self.assertEqual(5001, self.manager.get_setting('unit.test').get_iterations())
+        self.assertEqual(4096, self.manager.get_setting('some.domain').get_iterations())
+        self.assertEqual(4098, self.manager.get_setting('third.domain').get_iterations())
