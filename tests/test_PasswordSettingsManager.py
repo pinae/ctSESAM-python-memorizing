@@ -8,6 +8,7 @@ from PasswordSettingsManager import PasswordSettingsManager
 from PasswordSetting import PasswordSetting
 from Crypter import Crypter
 from Packer import Packer
+from base64 import b64encode
 
 
 class TestPasswordSettingsManager(unittest.TestCase):
@@ -129,3 +130,39 @@ class TestPasswordSettingsManager(unittest.TestCase):
         self.assertEqual(settings['settings'][0], self.manager.get_settings_as_list()['settings'][0])
         self.assertEqual(settings['settings'][1], self.manager.get_settings_as_list()['settings'][1])
         self.assertEqual(settings, self.manager.get_settings_as_list())
+
+    def test_get_export_data(self):
+        settings = {
+            'settings': [
+                {
+                    'domain': 'unit.test',
+                    'length': 11,
+                    'iterations': 5000,
+                    'notes': 'Nice note!',
+                    'salt': 'cGVwcGVy',
+                    'usedCharacters': 'abcdefghijklmnopqrstuvwxyzABCDEFGHJKLMNPQRTUVWXYZ0123456789' +
+                                      '#!"§$%&/()[]{}=-_+*<>;:.',
+                    'cDate': '2011-02-12T11:07:31',
+                    'mDate': '2011-02-12T11:07:32'
+                },
+                {
+                    'domain': 'some.domain',
+                    'length': 4,
+                    'iterations': 4096,
+                    'salt': 'cGVwcGVy',
+                    'usedCharacters': '6478593021',
+                    'cDate': '2013-06-17T04:03:41',
+                    'mDate': '2014-08-02T10:37:12'
+                }
+            ],
+            'synced': []
+        }
+        crypter = Crypter('xyz')
+        f = open(os.path.expanduser('~/.ctSESAM_test.pws'), 'bw')
+        f.write(crypter.encrypt(Packer.compress(json.dumps(settings).encode('utf-8'))))
+        f.close()
+        self.manager.load_settings_from_file('xyz')
+        self.assertEqual(
+            b64encode(crypter.encrypt(Packer.compress(json.dumps(settings['settings']).encode('utf-8')))),
+            self.manager.get_export_data('xyz')
+        )
