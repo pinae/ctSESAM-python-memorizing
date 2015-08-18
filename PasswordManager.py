@@ -7,25 +7,16 @@ from hashlib import pbkdf2_hmac
 class CtSesam(object):
     def __init__(self):
         self.password_characters = []
-        self.set_password_characters()
+        self.set_password_character_set()
         self.salt = "pepper".encode('utf-8')
 
-    def set_password_characters(self, use_letters=True, use_digits=True, use_special_characters=True):
-        if not use_letters and not use_digits and not use_special_characters:
-            use_letters = True
-            use_digits = True
-            use_special_characters = True
-        lower_case_letters = list('abcdefghijklmnopqrstuvwxyz')
-        upper_case_letters = list('ABCDEFGHJKLMNPQRTUVWXYZ')
-        digits = list('0123456789')
-        special_characters = list('#!"§$%&/()[]{}=-_+*<>;:.')
-        self.password_characters = []
-        if use_letters:
-            self.password_characters += lower_case_letters + upper_case_letters
-        if use_digits:
-            self.password_characters += digits
-        if use_special_characters:
-            self.password_characters += special_characters
+    def set_password_character_set(
+            self,
+            password_characters='abcdefghijklmnopqrstuvwxyzABCDEFGHJKLMNPQRTUVWXYZ0123456789#!"§$%&/()[]{}=-_+*<>;:.'):
+        self.password_characters = password_characters
+
+    def set_salt(self, salt):
+        self.salt = salt
 
     def convert_bytes_to_password(self, digest, length):
         number = int.from_bytes(digest, byteorder='big')

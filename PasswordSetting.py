@@ -272,8 +272,6 @@ class PasswordSetting(object):
         return domain_object
 
     def load_from_dict(self, loaded_setting):
-        if "domain" in loaded_setting:
-            self.set_domain(loaded_setting["domain"])
         if "username" in loaded_setting:
             self.set_username(loaded_setting["username"])
         if "legacyPassword" in loaded_setting:
