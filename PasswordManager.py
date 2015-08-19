@@ -27,7 +27,11 @@ class CtSesam(object):
         return password
 
     def generate(self, master_password, domain, username='', length=10, iterations=4096):
-        hash_string = domain + username + master_password
-        hashed_bytes = pbkdf2_hmac('sha512', hash_string.encode('utf-8'), self.salt, iterations)
-        return self.convert_bytes_to_password(hashed_bytes, length)
+        if len(self.password_characters) > 0:
+            hash_string = domain + username + master_password
+            hashed_bytes = pbkdf2_hmac('sha512', hash_string.encode('utf-8'), self.salt, iterations)
+            return self.convert_bytes_to_password(hashed_bytes, length)
+        else:
+            print('Für das Passwort stehen keine Zeichen zur Verfügung. Sie sollten die Einstellungen ändern.')
+            return ''
 
