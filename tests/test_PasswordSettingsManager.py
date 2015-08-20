@@ -43,15 +43,15 @@ class TestPasswordSettingsManager(unittest.TestCase):
         crypter = Crypter('xyz')
         data = json.loads(Packer.decompress(crypter.decrypt(f.read())).decode('utf8'))
         f.close()
-        self.assertEqual('abc.de', data['settings'][0]['domain'])
-        self.assertEqual(10, data['settings'][0]['length'])
-        self.assertEqual('hugo.com', data['settings'][1]['domain'])
-        self.assertEqual(12, data['settings'][1]['length'])
+        self.assertEqual('abc.de', data['settings']['abc.de']['domain'])
+        self.assertEqual(10, data['settings']['abc.de']['length'])
+        self.assertEqual('hugo.com', data['settings']['hugo.com']['domain'])
+        self.assertEqual(12, data['settings']['hugo.com']['length'])
 
     def test_load_settings_from_file(self):
         settings = {
-            'settings': [
-                {
+            'settings': {
+                'unit.test': {
                     'domain': 'unit.test',
                     'length': 11,
                     'iterations': 5000,
@@ -59,14 +59,14 @@ class TestPasswordSettingsManager(unittest.TestCase):
                     'cDate': '2011-02-12T11:07:31',
                     'mDate': '2011-02-12T11:07:32'
                 },
-                {
+                'some.domain': {
                     'domain': 'some.domain',
                     'length': 4,
                     'usedCharacters': '6478593021',
                     'cDate': '2013-06-17T04:03:41',
                     'mDate': '2014-08-02T10:37:12'
                 }
-            ],
+            },
             'synced': []
         }
         crypter = Crypter('xyz')
@@ -74,7 +74,8 @@ class TestPasswordSettingsManager(unittest.TestCase):
         f.write(crypter.encrypt(Packer.compress(json.dumps(settings).encode('utf-8'))))
         f.close()
         self.manager.load_settings_from_file('xyz')
-        self.assertEqual(['unit.test', 'some.domain'], self.manager.get_domain_list())
+        self.assertIn('unit.test', self.manager.get_domain_list())
+        self.assertIn('some.domain', self.manager.get_domain_list())
         self.assertEqual(11, self.manager.get_setting('unit.test').get_length())
         self.assertEqual(5000, self.manager.get_setting('unit.test').get_iterations())
         self.assertEqual('Nice note!', self.manager.get_setting('unit.test').get_notes())
@@ -98,8 +99,8 @@ class TestPasswordSettingsManager(unittest.TestCase):
 
     def test_get_domain_list(self):
         settings = {
-            'settings': [
-                {
+            'settings': {
+                'unit.test': {
                     'domain': 'unit.test',
                     'length': 11,
                     'iterations': 5000,
@@ -110,7 +111,7 @@ class TestPasswordSettingsManager(unittest.TestCase):
                     'cDate': '2011-02-12T11:07:31',
                     'mDate': '2011-02-12T11:07:32'
                 },
-                {
+                'some.domain': {
                     'domain': 'some.domain',
                     'length': 4,
                     'iterations': 4096,
@@ -119,7 +120,7 @@ class TestPasswordSettingsManager(unittest.TestCase):
                     'cDate': '2013-06-17T04:03:41',
                     'mDate': '2014-08-02T10:37:12'
                 }
-            ],
+            },
             'synced': []
         }
         crypter = Crypter('xyz')
@@ -127,14 +128,16 @@ class TestPasswordSettingsManager(unittest.TestCase):
         f.write(crypter.encrypt(Packer.compress(json.dumps(settings).encode('utf-8'))))
         f.close()
         self.manager.load_settings_from_file('xyz')
-        self.assertEqual(settings['settings'][0], self.manager.get_settings_as_list()['settings'][0])
-        self.assertEqual(settings['settings'][1], self.manager.get_settings_as_list()['settings'][1])
+        self.assertEqual(settings['settings']['unit.test'],
+                         self.manager.get_settings_as_list()['settings']['unit.test'])
+        self.assertEqual(settings['settings']['some.domain'],
+                         self.manager.get_settings_as_list()['settings']['some.domain'])
         self.assertEqual(settings, self.manager.get_settings_as_list())
 
     def test_get_export_data(self):
         settings = {
-            'settings': [
-                {
+            'settings': {
+                'unit.test': {
                     'domain': 'unit.test',
                     'length': 11,
                     'iterations': 5000,
@@ -145,7 +148,7 @@ class TestPasswordSettingsManager(unittest.TestCase):
                     'cDate': '2011-02-12T11:07:31',
                     'mDate': '2011-02-12T11:07:32'
                 },
-                {
+                'some.domain': {
                     'domain': 'some.domain',
                     'length': 4,
                     'iterations': 4096,
@@ -154,7 +157,7 @@ class TestPasswordSettingsManager(unittest.TestCase):
                     'cDate': '2013-06-17T04:03:41',
                     'mDate': '2014-08-02T10:37:12'
                 }
-            ],
+            },
             'synced': []
         }
         crypter = Crypter('xyz')
@@ -163,13 +166,13 @@ class TestPasswordSettingsManager(unittest.TestCase):
         f.close()
         self.manager.load_settings_from_file('xyz')
         self.assertEqual(
-            b64encode(crypter.encrypt(Packer.compress(json.dumps(settings['settings']).encode('utf-8')))),
+            b64encode(b'\x00' + crypter.encrypt(Packer.compress(json.dumps(settings['settings']).encode('utf-8')))),
             self.manager.get_export_data('xyz')
         )
 
     def test_update_from_export_data(self):
-        remote_data = [
-            {
+        remote_data = {
+            'unit.test': {
                 'domain': 'unit.test',
                 'length': 12,
                 'iterations': 5001,
@@ -179,7 +182,7 @@ class TestPasswordSettingsManager(unittest.TestCase):
                 'cDate': '2011-02-12T11:07:31',
                 'mDate': '2013-07-12T14:46:11'
             },
-            {
+            'some.domain': {
                 'domain': 'some.domain',
                 'length': 4,
                 'iterations': 4097,
@@ -188,7 +191,7 @@ class TestPasswordSettingsManager(unittest.TestCase):
                 'cDate': '2013-06-17T04:03:41',
                 'mDate': '2014-08-02T10:37:11'
             },
-            {
+            'third.domain': {
                 'domain': 'third.domain',
                 'length': 10,
                 'iterations': 4098,
@@ -197,10 +200,10 @@ class TestPasswordSettingsManager(unittest.TestCase):
                 'cDate': '2013-06-17T04:03:41',
                 'mDate': '2014-08-02T10:37:11'
             }
-        ]
+        }
         settings = {
-            'settings': [
-                {
+            'settings': {
+                'unit.test': {
                     'domain': 'unit.test',
                     'length': 11,
                     'iterations': 5000,
@@ -211,7 +214,7 @@ class TestPasswordSettingsManager(unittest.TestCase):
                     'cDate': '2011-02-12T11:07:31',
                     'mDate': '2011-02-12T11:07:32'
                 },
-                {
+                'some.domain': {
                     'domain': 'some.domain',
                     'length': 4,
                     'iterations': 4096,
@@ -220,7 +223,7 @@ class TestPasswordSettingsManager(unittest.TestCase):
                     'cDate': '2013-06-17T04:03:41',
                     'mDate': '2014-08-02T10:37:12'
                 }
-            ],
+            },
             'synced': []
         }
         crypter = Crypter('xyz')
@@ -230,7 +233,7 @@ class TestPasswordSettingsManager(unittest.TestCase):
         self.manager.load_settings_from_file('xyz')
         self.assertTrue(self.manager.update_from_export_data(
             'xyz',
-            b64encode(crypter.encrypt(Packer.compress(json.dumps(remote_data).encode('utf-8'))))))
+            b64encode(b'\x00' + crypter.encrypt(Packer.compress(json.dumps(remote_data).encode('utf-8'))))))
         self.assertEqual(['unit.test', 'some.domain', 'third.domain'], self.manager.get_domain_list())
         self.assertEqual(5001, self.manager.get_setting('unit.test').get_iterations())
         self.assertEqual(4096, self.manager.get_setting('some.domain').get_iterations())
