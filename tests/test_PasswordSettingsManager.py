@@ -129,10 +129,10 @@ class TestPasswordSettingsManager(unittest.TestCase):
         f.close()
         self.manager.load_settings_from_file('xyz')
         self.assertEqual(settings['settings']['unit.test'],
-                         self.manager.get_settings_as_list()['settings']['unit.test'])
+                         self.manager.get_settings_as_dict()['settings']['unit.test'])
         self.assertEqual(settings['settings']['some.domain'],
-                         self.manager.get_settings_as_list()['settings']['some.domain'])
-        self.assertEqual(settings, self.manager.get_settings_as_list())
+                         self.manager.get_settings_as_dict()['settings']['some.domain'])
+        self.assertEqual(settings, self.manager.get_settings_as_dict())
 
     def test_get_export_data(self):
         settings = {

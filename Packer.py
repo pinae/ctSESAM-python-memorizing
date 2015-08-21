@@ -3,11 +3,22 @@
 
 import zlib
 import struct
+import zlib.error as DecryptionError
 
 
 class Packer(object):
+    """
+    You do not need to create instances of this class because compress and decompress are both static methods.
+    """
+
     @staticmethod
     def compress(data):
+        """
+        Compresses the given data with the DEFLATE algorithm. The first four bytes contain the length of the
+        uncompressed data.
+        :param data:
+        :return:
+        """
         compress_object = zlib.compressobj(
             zlib.Z_BEST_COMPRESSION,
             zlib.DEFLATED,
@@ -27,6 +38,12 @@ class Packer(object):
 
     @staticmethod
     def decompress(compressed_data):
+        """
+        Decompresses the given data. Please be aware that the first four bytes are the length of the uncompressed
+        data.
+        :param compressed_data:
+        :return:
+        """
         if type(compressed_data) == bytes:
             return zlib.decompress(compressed_data[4:])
         else:

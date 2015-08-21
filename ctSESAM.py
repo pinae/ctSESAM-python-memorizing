@@ -2,23 +2,22 @@
 # -*- coding: utf-8 -*-
 
 from PasswordManager import CtSesam
-from PasswordSettingsManager import PasswordSettingsManager
+from PasswordSettingsManager import PasswordSettingsManager, DecryptionError
 from Sync import Sync
 import getpass
-import zlib
 
 if __name__ == "__main__":
-    settings_manager = PasswordSettingsManager()
     syncer = Sync("https://ersatzworld.net/ctpwdgen-server/", 'inter', 'op')
     remote_blob = syncer.pull()
     master_password = getpass.getpass(prompt='Masterpasswort: ')
+    settings_manager = PasswordSettingsManager()
     write_to_file = False
     remote_update_needed = False
     try:
         settings_manager.load_settings_from_file(master_password)
         remote_update_needed = settings_manager.update_from_export_data(master_password, remote_blob)
         write_to_file = True
-    except zlib.error:
+    except DecryptionError:
         print("Falsches Masterpasswort. Es wurden keine Einstellungen geladen.")
     domain = input('Domain: ')
     while len(domain) < 1:
@@ -40,7 +39,7 @@ if __name__ == "__main__":
     setting = settings_manager.get_setting(domain)
     if not setting_found:
         setting.set_username(input('Benutzername: '))
-        length_str = input('Passwordlänge [10]: ')
+        length_str = input('Passwortlänge [10]: ')
         try:
             length = int(length_str)
             if length <= 0:
@@ -52,9 +51,9 @@ if __name__ == "__main__":
         try:
             iterations = int(iterations_str)
             if iterations <= 0:
-                iterations = 10
+                iterations = 4096
         except ValueError:
-            iterations = 10
+            iterations = 4096
         remote_update_needed = True
     settings_manager.save_setting(setting)
     if write_to_file:
@@ -65,6 +64,10 @@ if __name__ == "__main__":
     sesam = CtSesam()
     sesam.set_password_character_set(setting.get_character_set())
     sesam.set_salt(setting.get_salt())
-    password = sesam.generate(master_password, setting.get_domain(), setting.get_username(),
-                              length=setting.get_length(), iterations=setting.get_iterations())
+    password = sesam.generate(
+        master_password,
+        setting.get_domain(),
+        setting.get_username(),
+        length=setting.get_length(),
+        iterations=setting.get_iterations())
     print('Passwort: ' + password)

@@ -6,7 +6,7 @@ import json
 from datetime import datetime
 from PasswordSetting import PasswordSetting
 from Crypter import Crypter
-from Packer import Packer
+from Packer import Packer, DecryptionError
 from base64 import b64decode, b64encode
 
 PASSWORD_SETTINGS_FILE = os.path.expanduser('~/.ctSESAM.pws')
@@ -29,9 +29,10 @@ class PasswordSettingsManager(object):
         :return:
         """
         if os.path.isfile(self.settings_file):
-            crypter = Crypter(password)
             file = open(self.settings_file, 'br')
-            saved_settings = json.loads(str(Packer.decompress(crypter.decrypt(file.read())), encoding='utf-8'))
+            data = file.read()
+            crypter = Crypter(data[:32], password)
+            saved_settings = json.loads(str(Packer.decompress(crypter.decrypt(data[32:])), encoding='utf-8'))
             for domain_name in saved_settings['settings'].keys():
                 data_set = saved_settings['settings'][domain_name]
                 found = False
@@ -59,9 +60,10 @@ class PasswordSettingsManager(object):
         :param password:
         :return:
         """
-        crypter = Crypter(password)
+        salt = os.urandom(32)
+        crypter = Crypter(salt, password)
         file = open(self.settings_file, 'bw')
-        file.write(crypter.encrypt(Packer.compress(json.dumps(self.get_settings_as_list()))))
+        file.write(salt + crypter.encrypt(Packer.compress(json.dumps(self.get_settings_as_dict()))))
         file.close()
         try:
             import win32con
@@ -118,7 +120,7 @@ class PasswordSettingsManager(object):
         """
         return [setting.get_domain() for setting in self.settings]
 
-    def get_settings_as_list(self):
+    def get_settings_as_dict(self):
         """
         Constructs a dictionary with a list of settings (no PasswordSetting objects but dicts) and a list of
         domain names of synced domains.
@@ -137,7 +139,7 @@ class PasswordSettingsManager(object):
         :param password:
         :return:
         """
-        settings_list = self.get_settings_as_list()['settings']
+        settings_list = self.get_settings_as_dict()['settings']
         if self.remote_data:
             for domain_name in self.remote_data.keys():
                 data_set = self.remote_data[domain_name]
@@ -152,8 +154,9 @@ class PasswordSettingsManager(object):
                         'mDate': datetime.now(),
                         'deleted': True
                     }
-        crypter = Crypter(password)
-        return b64encode(b'\x00' + crypter.encrypt(Packer.compress(json.dumps(settings_list))))
+        salt = os.urandom(32)
+        crypter = Crypter(salt, password)
+        return b64encode(b'\x00' + salt + crypter.encrypt(Packer.compress(json.dumps(settings_list))))
 
     def update_from_export_data(self, password, data):
         """
@@ -162,46 +165,53 @@ class PasswordSettingsManager(object):
         :param data:
         :return:
         """
-        crypter = Crypter(password)
-        data_version = b64decode(data)[:1]
-        self.remote_data = json.loads(str(Packer.decompress(crypter.decrypt(b64decode(data)[1:])), encoding='utf-8'))
-        update_remote = False
-        for domain_name in self.remote_data.keys():
-            data_set = self.remote_data[domain_name]
-            found = False
-            i = 0
-            while i < len(self.settings):
-                setting = self.settings[i]
-                if setting.get_domain() == domain_name:
-                    found = True
-                    if datetime.strptime(data_set['mDate'], "%Y-%m-%dT%H:%M:%S") > setting.get_m_date():
-                        if 'deleted' in data_set and data_set['deleted']:
-                            self.settings.pop(i)
-                        else:
-                            setting.load_from_dict(data_set)
-                            setting.set_synced(True)
-                            i += 1
-                    else:
-                        i += 1
-                        update_remote = True
-                else:
-                    i += 1
-            if not found:
-                new_setting = PasswordSetting(domain_name)
-                new_setting.load_from_dict(data_set)
-                new_setting.set_synced(True)
-                self.settings.append(new_setting)
-        for setting in self.settings:
-            found = False
+        binary_data = b64decode(data)
+        data_version = binary_data[:1]
+        if data_version == b'\x00':
+            encryption_salt = binary_data[1:33]
+            encrypted_data = binary_data[:33]
+            crypter = Crypter(encryption_salt, password)
+            self.remote_data = json.loads(str(Packer.decompress(crypter.decrypt(encrypted_data)), encoding='utf-8'))
+            update_remote = False
             for domain_name in self.remote_data.keys():
                 data_set = self.remote_data[domain_name]
-                if setting.get_domain() == domain_name:
-                    found = True
-                    if setting.get_m_date() >= datetime.strptime(data_set['mDate'], "%Y-%m-%dT%H:%M:%S"):
-                        update_remote = True
-            if not found:
-                update_remote = True
-        return update_remote
+                found = False
+                i = 0
+                while i < len(self.settings):
+                    setting = self.settings[i]
+                    if setting.get_domain() == domain_name:
+                        found = True
+                        if datetime.strptime(data_set['mDate'], "%Y-%m-%dT%H:%M:%S") > setting.get_m_date():
+                            if 'deleted' in data_set and data_set['deleted']:
+                                self.settings.pop(i)
+                            else:
+                                setting.load_from_dict(data_set)
+                                setting.set_synced(True)
+                                i += 1
+                        else:
+                            i += 1
+                            update_remote = True
+                    else:
+                        i += 1
+                if not found:
+                    new_setting = PasswordSetting(domain_name)
+                    new_setting.load_from_dict(data_set)
+                    new_setting.set_synced(True)
+                    self.settings.append(new_setting)
+            for setting in self.settings:
+                found = False
+                for domain_name in self.remote_data.keys():
+                    data_set = self.remote_data[domain_name]
+                    if setting.get_domain() == domain_name:
+                        found = True
+                        if setting.get_m_date() >= datetime.strptime(data_set['mDate'], "%Y-%m-%dT%H:%M:%S"):
+                            update_remote = True
+                if not found:
+                    update_remote = True
+            return update_remote
+        else:
+            print("Unknown data format version! Could not update.")
+            return False
 
     def set_all_settings_to_synced(self):
         """
