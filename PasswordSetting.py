@@ -254,7 +254,7 @@ class PasswordSetting(object):
 
     def use_custom_character_set(self):
         """
-        Returns true if the character set is set to the default character set.
+        Returns false if the character set is set to the default character set.
 
         :return: are we using a custom character set?
         :rtype: bool
