@@ -21,16 +21,18 @@ class CtSesam(object):
         The default character set is
         'abcdefghijklmnopqrstuvwxyzABCDEFGHJKLMNPQRTUVWXYZ0123456789#!"§$%&/()[]{}=-_+*<>;:.'. Please pass a string
         or a list of strings with single characters.
-        :param password_characters:
-        :return:
+
+        :param str password_characters: a string or a list of strings with single characters
+        :return: Nothing
         """
         self.password_characters = password_characters
 
     def set_salt(self, salt):
         """
         The salt should be some random bytes.
-        :param salt:
-        :return:
+
+        :param bytes salt: a salt
+        :return: Nothing
         """
         self.salt = salt
 
@@ -38,9 +40,12 @@ class CtSesam(object):
         """
         Creates passwords of length length from pseudo-random bytes in digest. You can use this to create random
         passwords by passing random bytes.
-        :param digest:
-        :param length:
-        :return:
+
+        :param digest: pseudo-random data
+        :type digest: bytes
+        :param int length:
+        :returns: a password
+        :rtype: str
         """
         number = int.from_bytes(digest, byteorder='big')
         password = ''
@@ -54,12 +59,14 @@ class CtSesam(object):
         This method does all the work. It calculates a password with PBKDF2 and convert_bytes_to_password.
         4096 iterations will give you a password in ~0.04s. If you have a fast computer you can increase this
         to make it harder to hack your masterpassword.
-        :param master_password:
-        :param domain:
-        :param username:
-        :param length:
-        :param iterations:
-        :return:
+
+        :param str master_password:
+        :param str domain:
+        :param str username:
+        :param int length:
+        :param int iterations:
+        :return: a password
+        :rtype: str
         """
         if len(self.password_characters) > 0:
             hash_string = domain + username + master_password

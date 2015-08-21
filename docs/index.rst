@@ -15,6 +15,9 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
+   passwordGeneration
+   settings
+
 
 
 Indices and tables

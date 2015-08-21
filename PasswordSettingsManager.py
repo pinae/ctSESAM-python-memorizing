@@ -6,7 +6,7 @@ import json
 from datetime import datetime
 from PasswordSetting import PasswordSetting
 from Crypter import Crypter
-from Packer import Packer, DecryptionError
+from Packer import Packer
 from base64 import b64decode, b64encode
 
 PASSWORD_SETTINGS_FILE = os.path.expanduser('~/.ctSESAM.pws')
@@ -25,8 +25,8 @@ class PasswordSettingsManager(object):
     def load_settings_from_file(self, password):
         """
         This loads the saved settings. It is a good idea to call this method the minute you have a password.
-        :param password:
-        :return:
+
+        :param str password:
         """
         if os.path.isfile(self.settings_file):
             file = open(self.settings_file, 'br')
@@ -57,8 +57,8 @@ class PasswordSettingsManager(object):
         """
         This actually saves the settings to a file on the disk. The file is encrypted so you need to supply the
         password.
-        :param password:
-        :return:
+
+        :param str password:
         """
         salt = os.urandom(32)
         crypter = Crypter(salt, password)
@@ -76,8 +76,10 @@ class PasswordSettingsManager(object):
         """
         This function always returns a setting. If no setting was stored for the given domain a new PasswordSetting
         object is created.
-        :param domain:
-        :return:
+
+        :param str domain:
+        :return: a setting object
+        :rtype: PasswordSetting
         """
         for setting in self.settings:
             if setting.get_domain() == domain:
@@ -90,8 +92,8 @@ class PasswordSettingsManager(object):
         """
         This saves the supplied setting only in memory. Call save_settings_to_file if you want to have it saved to
         disk.
-        :param setting:
-        :return:
+
+        :param PasswordSetting setting: the setting which should be saved
         """
         for i, existing_setting in enumerate(self.settings):
             if existing_setting.get_domain() == setting.get_domain():
@@ -102,8 +104,8 @@ class PasswordSettingsManager(object):
         """
         This removes the setting from the internal list. Call save_settings_to_file if you want to have the change
         saved to disk.
-        :param setting:
-        :return:
+
+        :param PasswordSetting setting:
         """
         i = 0
         while i < len(self.settings):
@@ -116,7 +118,9 @@ class PasswordSettingsManager(object):
     def get_domain_list(self):
         """
         This gives you a list of saved domains.
-        :return:
+
+        :return: a list of domain names
+        :rtype: [str]
         """
         return [setting.get_domain() for setting in self.settings]
 
@@ -124,7 +128,9 @@ class PasswordSettingsManager(object):
         """
         Constructs a dictionary with a list of settings (no PasswordSetting objects but dicts) and a list of
         domain names of synced domains.
-        :return:
+
+        :return: a dictionary
+        :rtype: dict
         """
         settings_list = {'settings': {}, 'synced': []}
         for setting in self.settings:
@@ -136,8 +142,10 @@ class PasswordSettingsManager(object):
     def get_export_data(self, password):
         """
         This gives you a base64 encoded string of encrypted settings data (the blob).
-        :param password:
-        :return:
+
+        :param str password:
+        :return: encrypted settings blob
+        :rtype: str
         """
         settings_list = self.get_settings_as_dict()['settings']
         if self.remote_data:
@@ -161,9 +169,9 @@ class PasswordSettingsManager(object):
     def update_from_export_data(self, password, data):
         """
         This takes a base64 encoded string of encrypted settings (a blob) and updates the internal list of settings.
-        :param password:
-        :param data:
-        :return:
+
+        :param str password: the masterpassword
+        :param str data: base64 encoded data
         """
         binary_data = b64decode(data)
         data_version = binary_data[:1]
@@ -217,7 +225,6 @@ class PasswordSettingsManager(object):
         """
         Convenience function for marking all saved settings as synced. Call this after a successful update at the
         sync server.
-        :return:
         """
         for setting in self.settings:
             setting.set_synced(True)

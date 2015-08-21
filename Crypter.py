@@ -18,8 +18,10 @@ class Crypter(object):
     def add_pkcs7_padding(data):
         """
         Adds PKCS7 padding so it can be divided into full blocks of 16 bytes.
-        :param data:
-        :return:
+
+        :param bytes data: data without padding
+        :return: padded data
+        :rtype: bytes
         """
         length = 16 - (len(data) % 16)
         data += bytes([length])*length
@@ -28,8 +30,10 @@ class Crypter(object):
     def encrypt(self, data):
         """
         Encrypts with AES in CBC mode with PKCS7 padding.
-        :param data:
-        :return:
+
+        :param bytes data: data for encryption
+        :return: encrypted data
+        :rtype: bytes
         """
         aes_object = AES.new(self.key, AES.MODE_CBC, self.iv)
         return aes_object.encrypt(self.add_pkcs7_padding(data))
@@ -38,16 +42,20 @@ class Crypter(object):
     def remove_pkcs7_padding(data):
         """
         Removes the PKCS7 padding.
-        :param data:
-        :return:
+
+        :param bytes data: padded data
+        :return: data without padding
+        :rtype: bytes
         """
         return data[:-data[-1]]
 
     def decrypt(self, encrypted_data):
         """
         Decrypts with AES in CBC mode with PKCS7 padding.
-        :param encrypted_data:
-        :return:
+
+        :param bytes encrypted_data: encrypted data
+        :return: decrypted data
+        :rtype: bytes
         """
         aes_object = AES.new(self.key, AES.MODE_CBC, self.iv)
         return self.remove_pkcs7_padding(aes_object.decrypt(encrypted_data))

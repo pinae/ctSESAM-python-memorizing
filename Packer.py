@@ -3,7 +3,6 @@
 
 import zlib
 import struct
-import zlib.error as DecryptionError
 
 
 class Packer(object):
@@ -16,8 +15,10 @@ class Packer(object):
         """
         Compresses the given data with the DEFLATE algorithm. The first four bytes contain the length of the
         uncompressed data.
-        :param data:
-        :return:
+
+        :param bytes data: uncompressed data
+        :return: compressed data
+        :rtype: bytes
         """
         compress_object = zlib.compressobj(
             zlib.Z_BEST_COMPRESSION,
@@ -41,8 +42,10 @@ class Packer(object):
         """
         Decompresses the given data. Please be aware that the first four bytes are the length of the uncompressed
         data.
-        :param compressed_data:
-        :return:
+
+        :param bytes compressed_data: compressed data
+        :return: uncompressed data
+        :rtype: bytes
         """
         if type(compressed_data) == bytes:
             return zlib.decompress(compressed_data[4:])

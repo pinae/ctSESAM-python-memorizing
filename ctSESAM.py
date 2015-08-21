@@ -2,9 +2,10 @@
 # -*- coding: utf-8 -*-
 
 from PasswordManager import CtSesam
-from PasswordSettingsManager import PasswordSettingsManager, DecryptionError
+from PasswordSettingsManager import PasswordSettingsManager
 from Sync import Sync
 import getpass
+import zlib
 
 if __name__ == "__main__":
     syncer = Sync("https://ersatzworld.net/ctpwdgen-server/", 'inter', 'op')
@@ -17,7 +18,7 @@ if __name__ == "__main__":
         settings_manager.load_settings_from_file(master_password)
         remote_update_needed = settings_manager.update_from_export_data(master_password, remote_blob)
         write_to_file = True
-    except DecryptionError:
+    except zlib.error:
         print("Falsches Masterpasswort. Es wurden keine Einstellungen geladen.")
     domain = input('Domain: ')
     while len(domain) < 1:
