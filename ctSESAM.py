@@ -3,21 +3,14 @@
 
 from PasswordManager import CtSesam
 from PasswordSettingsManager import PasswordSettingsManager
-from Sync import Sync
 import getpass
 import zlib
 
 if __name__ == "__main__":
-    syncer = Sync("https://ersatzworld.net/ctpwdgen-server/", 'inter', 'op')
-    remote_blob = syncer.pull()
-    master_password = getpass.getpass(prompt='Masterpasswort: ')
     settings_manager = PasswordSettingsManager()
-    write_to_file = False
-    remote_update_needed = False
+    master_password = getpass.getpass(prompt='Masterpasswort: ')
     try:
-        settings_manager.load_settings_from_file(master_password)
-        remote_update_needed = settings_manager.update_from_export_data(master_password, remote_blob)
-        write_to_file = True
+        settings_manager.load_settings(master_password)
     except zlib.error:
         print("Falsches Masterpasswort. Es wurden keine Einstellungen geladen.")
     domain = input('Domain: ')
@@ -39,29 +32,9 @@ if __name__ == "__main__":
                         setting_found = True
     setting = settings_manager.get_setting(domain)
     if not setting_found:
-        setting.set_username(input('Benutzername: '))
-        length_str = input('Passwortlänge [10]: ')
-        try:
-            length = int(length_str)
-            if length <= 0:
-                length = 10
-        except ValueError:
-            length = 10
-        setting.set_length(length)
-        iterations_str = input('Iterationszahl [4096]: ')
-        try:
-            iterations = int(iterations_str)
-            if iterations <= 0:
-                iterations = 4096
-        except ValueError:
-            iterations = 4096
-        remote_update_needed = True
-    settings_manager.save_setting(setting)
-    if write_to_file:
-        settings_manager.save_settings_to_file(master_password)
-    if remote_update_needed:
-        syncer.push(settings_manager.get_export_data(master_password))
-        settings_manager.set_all_settings_to_synced()
+        setting.ask_for_input()
+    settings_manager.set_setting(setting)
+    settings_manager.store_settings(master_password)
     sesam = CtSesam()
     sesam.set_password_character_set(setting.get_character_set())
     sesam.set_salt(setting.get_salt())

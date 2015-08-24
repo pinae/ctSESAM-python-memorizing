@@ -11,9 +11,9 @@ class Sync(object):
     """
     Sync connection wrapper.
 
-    :param server_url:
-    :param username:
-    :param password:
+    :param str server_url: https://my.server.domain/path/to/php/
+    :param str username:
+    :param str password:
     """
     def __init__(self, server_url, username, password):
         self.server_url = server_url
@@ -29,7 +29,9 @@ class Sync(object):
     def pull(self):
         """
         Read the base64 encoded data from the sync server.
-        :return:
+
+        :return: base64 encoded data
+        :rtype: str
         """
         request = requests.post(self.server_url + "ajax/read.php",
                                 data="",
@@ -47,8 +49,10 @@ class Sync(object):
     def push(self, data):
         """
         Push data to the server. This overwrites data living there. Please pull and merge first.
-        :param data:
-        :return:
+
+        :param str data: base64 encoded data
+        :return: was the push successful?
+        :rtype: bool
         """
         request = requests.post(self.server_url + "ajax/write.php",
                                 data={'data': data},

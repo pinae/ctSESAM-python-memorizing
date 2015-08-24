@@ -528,3 +528,25 @@ class PasswordSetting(object):
             self.set_modification_date(loaded_setting["mDate"])
         if "usedCharacters" in loaded_setting:
             self.set_custom_character_set(loaded_setting["usedCharacters"])
+
+    def ask_for_input(self):
+        """
+        Displays some input prompts for the settings properties.
+        """
+        self.set_username(input('Benutzername: '))
+        length_str = input('Passwortlänge [' + str(self.get_length()) + ']: ')
+        try:
+            length = int(length_str)
+            if length <= 0:
+                length = self.get_length()
+        except ValueError:
+            length = self.get_length()
+        self.set_length(length)
+        iterations_str = input('Iterationszahl [' + str(self.get_iterations()) + ']: ')
+        try:
+            iterations = int(iterations_str)
+            if iterations <= 0:
+                iterations = self.get_iterations()
+        except ValueError:
+            iterations = self.get_iterations()
+        self.set_iterations(iterations)

@@ -37,7 +37,7 @@ class TestPasswordSettingsManager(unittest.TestCase):
         self.manager.get_setting('abc.de')
         new_setting = PasswordSetting('hugo.com')
         new_setting.set_length(12)
-        self.manager.save_setting(new_setting)
+        self.manager.set_setting(new_setting)
         self.manager.save_settings_to_file('xyz')
         f = open(os.path.expanduser('~/.ctSESAM_test.pws'), 'br')
         crypter = Crypter('xyz')
@@ -82,17 +82,17 @@ class TestPasswordSettingsManager(unittest.TestCase):
         self.assertEqual(4, self.manager.get_setting('some.domain').get_length())
         self.assertEqual('6478593021', self.manager.get_setting('some.domain').get_character_set())
 
-    def test_save_setting(self):
+    def test_set_setting(self):
         setting = self.manager.get_setting('hugo.me')
         setting.set_length(6)
-        self.manager.save_setting(setting)
+        self.manager.set_setting(setting)
         self.assertIn('hugo.me', self.manager.get_domain_list())
         self.assertEqual(6, self.manager.get_setting('hugo.me').get_length())
 
     def test_delete_setting(self):
         setting = self.manager.get_setting('hugo.me')
         setting.set_length(6)
-        self.manager.save_setting(setting)
+        self.manager.set_setting(setting)
         self.assertIn('hugo.me', self.manager.get_domain_list())
         self.manager.delete_setting(setting)
         self.assertNotIn('hugo.me', self.manager.get_domain_list())
