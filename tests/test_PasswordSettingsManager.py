@@ -220,6 +220,8 @@ class TestPasswordSettingsManager(unittest.TestCase):
             Packer.compress(json.dumps(settings).encode('utf-8'))))
         f.close()
         self.manager.load_settings_from_file('xyz')
+        salt = os.urandom(32)
+        crypter = Crypter(salt, 'xyz')
         self.assertEqual(
             b64encode(b'\x00' + salt + crypter.encrypt(
                 Packer.compress(json.dumps(settings['settings']).encode('utf-8')))),
