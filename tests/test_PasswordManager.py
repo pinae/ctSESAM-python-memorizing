@@ -1,25 +1,26 @@
-
-import tempfile
+# coding=utf-8
+"""
+Test for CtSESAM class.
+"""
 import unittest
-import ctSESAM
+from PasswordManager import CtSesam
 
 
-class TestCtSESAM(unittest.TestCase):
-    def setUp(self):
-        self.test_config = tempfile.NamedTemporaryFile(prefix='ctSESAM_tests_', suffix=".ini")
-        self.cfg = ctSESAM.SesamConfig(self.test_config.name, verbose=False)
-        self.cfg.write_defaults()
-        self.cfg.load_from_config()
-        self.cfg.salt="pepper"
+class TestCtSesam(unittest.TestCase):
+    def test_default(self):
+        manager = CtSesam()
+        self.assertEqual("5#%KiUvEE7", manager.generate('foo', 'some.domain'))
 
-    def tearDown(self):
-        self.test_config.close()
+    def test_custom_character_set(self):
+        manager = CtSesam()
+        manager.set_password_character_set('abcdefghijklmnopqrstuvwxyzABCDUFGHJKLMNPQRTEVWXYZ0123456789#!"§$%&/()[]{}=-_+*<>;:.')
+        self.assertEqual("5#%KiEvUU7", manager.generate('foo', 'some.domain'))
 
-    @unittest.skip("Not adjusted.")
-    def test_salt(self):
-        self.assertEqual(self.cfg.salt, "pepper")
+    def test_custom_salt(self):
+        manager = CtSesam()
+        manager.set_salt(b'qanisaoerna56745678eornsiarteonstiaroenstiaeroh')
+        self.assertEqual("CQz7kgz%C.", manager.generate('foo', 'some.domain'))
 
-    @unittest.skip("Not adjusted.")
-    def test_generate_password(self):
-        password = ctSESAM.generate_password(domain="foobar.tld", master_password="12345678", cfg=self.cfg)
-        self.assertEqual(password, "Kcr_1-=2fQ")
+    def test_long(self):
+        manager = CtSesam()
+        self.assertEqual("5#%KiUvEE7}t<d:Y=Lzn;dKzaG0qU/t)", manager.generate('foo', 'some.domain', length=32))
