@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import unittest
-from unittest.mock import patch
 import os
 import json
 import struct
@@ -10,7 +9,7 @@ from PasswordSettingsManager import PasswordSettingsManager
 from PasswordSetting import PasswordSetting
 from Crypter import Crypter
 from Packer import Packer
-from base64 import b64encode
+from base64 import b64encode, b64decode
 
 
 class MockSyncManager(object):
@@ -220,13 +219,12 @@ class TestPasswordSettingsManager(unittest.TestCase):
             Packer.compress(json.dumps(settings).encode('utf-8'))))
         f.close()
         self.manager.load_settings_from_file('xyz')
-        salt = os.urandom(32)
+        data = b64decode(self.manager.get_export_data('xyz'))
+        salt = data[1:33]
         crypter = Crypter(salt, 'xyz')
         self.assertEqual(
-            b64encode(b'\x00' + salt + crypter.encrypt(
-                Packer.compress(json.dumps(settings['settings']).encode('utf-8')))),
-            self.manager.get_export_data('xyz', salt=salt)
-        )
+            settings['settings'],
+            json.loads(str(Packer.decompress(crypter.decrypt(data[33:])), encoding='utf-8')))
 
     def test_update_from_sync(self):
         settings = {
