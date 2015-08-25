@@ -194,12 +194,14 @@ class PasswordSettingsManager(object):
                 settings_list['synced'].append(setting.get_domain())
         return settings_list
 
-    def get_export_data(self, password):
+    def get_export_data(self, password, salt=None):
         """
         This gives you a base64 encoded string of encrypted settings data (the blob).
 
         :param password: masterpassword
         :type password: str
+        :param salt: salt for the encryption: This is for testing only! Do not set it normally!
+        :type salt: bytes
         :return: encrypted settings blob
         :rtype: str
         """
@@ -218,7 +220,8 @@ class PasswordSettingsManager(object):
                         'mDate': datetime.now(),
                         'deleted': True
                     }
-        salt = os.urandom(32)
+        if not salt:
+            salt = os.urandom(32)
         crypter = Crypter(salt, password)
         return b64encode(b'\x00' + salt + crypter.encrypt(Packer.compress(json.dumps(settings_list))))
 
@@ -229,8 +232,8 @@ class PasswordSettingsManager(object):
         :param password: the masterpassword
         :type password: str
         """
-        data = self.sync_manager.pull()
-        if len(data) > 0:
+        pull_successful, data = self.sync_manager.pull()
+        if pull_successful and len(data) > 0:
             binary_data = b64decode(data)
             data_version = binary_data[:1]
             if data_version == b'\x00':
@@ -254,10 +257,10 @@ class PasswordSettingsManager(object):
                                 else:
                                     setting.load_from_dict(data_set)
                                     setting.set_synced(True)
+                                    self.update_remote = True
                                     i += 1
                             else:
                                 i += 1
-                                self.update_remote = True
                         else:
                             i += 1
                     if not found:
