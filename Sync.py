@@ -15,10 +15,11 @@ class Sync(object):
     :param str username:
     :param str password:
     """
-    def __init__(self, server_url, username, password):
+    def __init__(self, server_url, username, password, cert_filename):
         self.server_url = server_url
         self.username = username
         self.password = password
+        self.certificate_filename = cert_filename
         self.headers = {
             'content-type': 'application/x-www-form-urlencoded',
             'Authorization': 'Basic ' + str(base64.b64encode(
@@ -36,15 +37,20 @@ class Sync(object):
         request = requests.post(self.server_url + "ajax/read.php",
                                 data="",
                                 headers=self.headers,
-                                verify=os.path.join(os.path.dirname(os.path.realpath(__file__)), 'certificate.pem'))
+                                verify=os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                                                    self.certificate_filename))
         if request.status_code == requests.codes.ok:
             received_data = json.loads(request.text)
-            if 'result' in received_data:
-                return received_data['result']
+            print(received_data)
+            if 'status' in received_data and received_data['status']:
+                if 'result' in received_data:
+                    return True, received_data['result']
+                else:
+                    return True, ''
             else:
-                return ''
+                return False, ''
         else:
-            return ''
+            return False, ''
 
     def push(self, data):
         """
@@ -57,7 +63,8 @@ class Sync(object):
         request = requests.post(self.server_url + "ajax/write.php",
                                 data={'data': data},
                                 headers=self.headers,
-                                verify=os.path.join(os.path.dirname(os.path.realpath(__file__)), 'certificate.pem'))
+                                verify=os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                                                    self.certificate_filename))
         if request.status_code == requests.codes.ok:
             return True
         else:
