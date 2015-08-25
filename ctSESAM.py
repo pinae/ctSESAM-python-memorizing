@@ -3,12 +3,12 @@
 
 from PasswordManager import CtSesam
 from PasswordSettingsManager import PasswordSettingsManager
-import getpass
 import zlib
+import getpass
 
 if __name__ == "__main__":
-    settings_manager = PasswordSettingsManager()
     master_password = getpass.getpass(prompt='Masterpasswort: ')
+    settings_manager = PasswordSettingsManager()
     try:
         settings_manager.load_settings(master_password)
     except zlib.error:
