@@ -17,6 +17,7 @@ Contents:
 
    passwordGeneration
    settings
+   synchronisation
 
 
 
