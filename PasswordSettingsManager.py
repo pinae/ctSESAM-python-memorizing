@@ -32,21 +32,25 @@ class PasswordSettingsManager(object):
         self.sync_manager = SyncManager()
         self.update_remote = False
 
-    def load_settings(self, password):
+    def load_settings(self, password, update_from_sync=True, omit_sync_settings_questions=False):
         """
         Loads settings from local file and from a sync server if possible.
 
-        :param password: masterpassword
+        :param str password: masterpassword
+        :param bool update_from_sync: do a sync update?
+        :param bool omit_sync_settings_questions: do not ask for questions? (Defalut: False)
         :type password: str
         """
-        self.load_settings_from_file(password)
-        self.update_from_sync(password)
+        self.load_settings_from_file(password, not update_from_sync or omit_sync_settings_questions)
+        if update_from_sync:
+            self.update_from_sync(password)
 
-    def load_settings_from_file(self, password):
+    def load_settings_from_file(self, password, omit_sync_settings_questions=False):
         """
         This loads the saved settings. It is a good idea to call this method the minute you have a password.
 
-        :param password: masterpassword
+        :param str password: masterpassword
+        :param bool omit_sync_settings_questions: do not ask for questions? (Defalut: False)
         :type password: str
         """
         if os.path.isfile(self.settings_file):
@@ -77,7 +81,8 @@ class PasswordSettingsManager(object):
                     self.settings.append(new_setting)
             file.close()
         else:
-            self.sync_manager.ask_for_sync_settings()
+            if not omit_sync_settings_questions:
+                self.sync_manager.ask_for_sync_settings()
 
     def store_settings(self, password):
         """
@@ -233,53 +238,57 @@ class PasswordSettingsManager(object):
         :type password: str
         """
         pull_successful, data = self.sync_manager.pull()
-        if pull_successful and len(data) > 0:
-            binary_data = b64decode(data)
-            data_version = binary_data[:1]
-            if data_version == b'\x00':
-                encryption_salt = binary_data[1:33]
-                encrypted_data = binary_data[33:]
-                crypter = Crypter(encryption_salt, password)
-                self.remote_data = json.loads(
-                    str(Packer.decompress(crypter.decrypt(encrypted_data)), encoding='utf-8'))
-                self.update_remote = False
-                for domain_name in self.remote_data.keys():
-                    data_set = self.remote_data[domain_name]
-                    found = False
-                    i = 0
-                    while i < len(self.settings):
-                        setting = self.settings[i]
-                        if setting.get_domain() == domain_name:
-                            found = True
-                            if datetime.strptime(data_set['mDate'], "%Y-%m-%dT%H:%M:%S") > setting.get_m_date():
-                                if 'deleted' in data_set and data_set['deleted']:
-                                    self.settings.pop(i)
-                                else:
-                                    setting.load_from_dict(data_set)
-                                    setting.set_synced(True)
-                                    self.update_remote = True
-                                    i += 1
+        if not pull_successful:
+            print("Sync failed: No connection to the server.")
+            return False
+        if not len(data) > 0:
+            return False
+        binary_data = b64decode(data)
+        data_version = binary_data[:1]
+        if data_version == b'\x00':
+            encryption_salt = binary_data[1:33]
+            encrypted_data = binary_data[33:]
+            crypter = Crypter(encryption_salt, password)
+            self.remote_data = json.loads(
+                str(Packer.decompress(crypter.decrypt(encrypted_data)), encoding='utf-8'))
+            self.update_remote = False
+            for domain_name in self.remote_data.keys():
+                data_set = self.remote_data[domain_name]
+                found = False
+                i = 0
+                while i < len(self.settings):
+                    setting = self.settings[i]
+                    if setting.get_domain() == domain_name:
+                        found = True
+                        if datetime.strptime(data_set['mDate'], "%Y-%m-%dT%H:%M:%S") > setting.get_m_date():
+                            if 'deleted' in data_set and data_set['deleted']:
+                                self.settings.pop(i)
                             else:
+                                setting.load_from_dict(data_set)
+                                setting.set_synced(True)
+                                self.update_remote = True
                                 i += 1
                         else:
                             i += 1
-                    if not found:
-                        new_setting = PasswordSetting(domain_name)
-                        new_setting.load_from_dict(data_set)
-                        new_setting.set_synced(True)
-                        self.settings.append(new_setting)
-                for setting in self.settings:
-                    found = False
-                    for domain_name in self.remote_data.keys():
-                        data_set = self.remote_data[domain_name]
-                        if setting.get_domain() == domain_name:
-                            found = True
-                            if setting.get_m_date() >= datetime.strptime(data_set['mDate'], "%Y-%m-%dT%H:%M:%S"):
-                                self.update_remote = True
-                    if not found:
-                        self.update_remote = True
-            else:
-                print("Unknown data format version! Could not update.")
+                    else:
+                        i += 1
+                if not found:
+                    new_setting = PasswordSetting(domain_name)
+                    new_setting.load_from_dict(data_set)
+                    new_setting.set_synced(True)
+                    self.settings.append(new_setting)
+            for setting in self.settings:
+                found = False
+                for domain_name in self.remote_data.keys():
+                    data_set = self.remote_data[domain_name]
+                    if setting.get_domain() == domain_name:
+                        found = True
+                        if setting.get_m_date() >= datetime.strptime(data_set['mDate'], "%Y-%m-%dT%H:%M:%S"):
+                            self.update_remote = True
+                if not found:
+                    self.update_remote = True
+        else:
+            print("Unknown data format version! Could not update.")
 
     def set_all_settings_to_synced(self):
         """

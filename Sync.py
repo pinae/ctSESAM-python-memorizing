@@ -41,7 +41,6 @@ class Sync(object):
                                                     self.certificate_filename))
         if request.status_code == requests.codes.ok:
             received_data = json.loads(request.text)
-            print(received_data)
             if 'status' in received_data and received_data['status']:
                 if 'result' in received_data:
                     return True, received_data['result']
@@ -60,12 +59,12 @@ class Sync(object):
         :return: was the push successful?
         :rtype: bool
         """
-        request = requests.post(self.server_url + "ajax/write.php",
-                                data={'data': data},
-                                headers=self.headers,
-                                verify=os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                                                    self.certificate_filename))
-        if request.status_code == requests.codes.ok:
+        response = requests.post(self.server_url + "ajax/write.php",
+                                 data={'data': data},
+                                 headers=self.headers,
+                                 verify=os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                                                     self.certificate_filename))
+        if response.status_code == requests.codes.ok:
             return True
         else:
             return False
