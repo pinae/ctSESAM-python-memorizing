@@ -59,20 +59,26 @@ if __name__ == "__main__":
     setting = settings_manager.get_setting(domain)
     if not setting_found:
         setting.ask_for_input()
-    if setting_found and len(setting.get_username()) > 0:
+    if setting_found and setting.has_username() and not args.quiet:
         print("Benutzername: " + setting.get_username())
     settings_manager.set_setting(setting)
     settings_manager.store_settings(master_password)
-    sesam = CtSesam()
-    sesam.set_password_character_set(setting.get_character_set())
-    sesam.set_salt(setting.get_salt())
-    password = sesam.generate(
-        master_password,
-        setting.get_domain(),
-        setting.get_username(),
-        setting.get_length(),
-        setting.get_iterations())
-    if args.quiet:
-        print(password)
+    if setting_found and setting.has_legacy_password():
+        if args.quiet:
+            print(setting.get_legacy_password())
+        else:
+            print("klassisches Passwort: " + setting.get_legacy_password())
     else:
-        print('Passwort: ' + password)
+        sesam = CtSesam()
+        sesam.set_password_character_set(setting.get_character_set())
+        sesam.set_salt(setting.get_salt())
+        password = sesam.generate(
+            master_password,
+            setting.get_domain(),
+            setting.get_username(),
+            setting.get_length(),
+            setting.get_iterations())
+        if args.quiet:
+            print(password)
+        else:
+            print('Passwort: ' + password)

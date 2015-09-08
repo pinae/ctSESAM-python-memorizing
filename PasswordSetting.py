@@ -5,6 +5,7 @@ Sets of password settings for a domain.
 """
 
 from datetime import datetime
+import getpass
 import string
 from base64 import b64encode, b64decode
 
@@ -51,6 +52,15 @@ class PasswordSetting:
         self.domain = domain
         self.synced = False
 
+    def has_username(self):
+        """
+        Returns True if the username is set.
+
+        :return:
+        :rtype: bool
+        """
+        return self.username and len(str(self.username)) > 0
+
     def get_username(self):
         """
         Returns the username or an empty string if there was no username.
@@ -73,6 +83,15 @@ class PasswordSetting:
         if username != self.username:
             self.synced = False
         self.username = username
+
+    def has_legacy_password(self):
+        """
+        Returns True if the legacy password is set.
+
+        :return:
+        :rtype: bool
+        """
+        return self.legacy_password and len(str(self.legacy_password)) > 0
 
     def get_legacy_password(self):
         """
@@ -553,19 +572,23 @@ class PasswordSetting:
         Displays some input prompts for the settings properties.
         """
         self.set_username(input('Benutzername: '))
-        length_str = input('Passwortlänge [' + str(self.get_length()) + ']: ')
-        try:
-            length = int(length_str)
-            if length <= 0:
+        wants_legacy_password = input('Möchten Sie ein Passwort generieren (Alternative: nur speichern)? [J/n] ')
+        if wants_legacy_password in ['n', 'N', 'speichern', 'save', 'no', 'nein', 'Nein', 'No', 'Nay']:
+            self.set_legacy_password(getpass.getpass('klassisches Passwort: '))
+        else:
+            length_str = input('Passwortlänge [' + str(self.get_length()) + ']: ')
+            try:
+                length = int(length_str)
+                if length <= 0:
+                    length = self.get_length()
+            except ValueError:
                 length = self.get_length()
-        except ValueError:
-            length = self.get_length()
-        self.set_length(length)
-        iterations_str = input('Iterationszahl [' + str(self.get_iterations()) + ']: ')
-        try:
-            iterations = int(iterations_str)
-            if iterations <= 0:
+            self.set_length(length)
+            iterations_str = input('Iterationszahl [' + str(self.get_iterations()) + ']: ')
+            try:
+                iterations = int(iterations_str)
+                if iterations <= 0:
+                    iterations = self.get_iterations()
+            except ValueError:
                 iterations = self.get_iterations()
-        except ValueError:
-            iterations = self.get_iterations()
-        self.set_iterations(iterations)
+            self.set_iterations(iterations)
