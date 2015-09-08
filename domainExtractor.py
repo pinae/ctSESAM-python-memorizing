@@ -1,5 +1,8 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
+"""
+Functions for extracting domains.
+"""
 
 import re
 

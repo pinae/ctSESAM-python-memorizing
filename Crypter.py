@@ -1,5 +1,8 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
+"""
+Encryption and decryption module.
+"""
 
 from Crypto.Cipher import AES
 from hashlib import pbkdf2_hmac

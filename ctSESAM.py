@@ -1,5 +1,8 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
+"""
+Main file for c't SESAM.
+"""
 
 from PasswordManager import CtSesam
 from PasswordSettingsManager import PasswordSettingsManager

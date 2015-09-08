@@ -1,5 +1,8 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
+"""
+Sets of password settings for a domain.
+"""
 
 from datetime import datetime
 import string
@@ -42,7 +45,8 @@ class PasswordSetting:
         """
         Change the domain string.
 
-        :param str domain:
+        :param domain: the domain
+        :type domain: str
         """
         self.domain = domain
         self.synced = False
@@ -63,7 +67,8 @@ class PasswordSetting:
         """
         Set the username.
 
-        :param str username:
+        :param username: the username
+        :type username: str
         """
         if username != self.username:
             self.synced = False
@@ -85,7 +90,8 @@ class PasswordSetting:
         """
         Set a legacy password.
 
-        :param str legacy_password:
+        :param legacy_password: a legacy password
+        :type legacy_password: str
         """
         if legacy_password != self.legacy_password:
             self.synced = False
@@ -107,7 +113,8 @@ class PasswordSetting:
         If set to True the letters are moved to the default position and brought into the default order. Missing
         letters are inserted. If set to False all default letters are removed from the character set.
 
-        :param bool use_letters:
+        :param use_letters:
+        :type use_letters: bool
         """
         old_character_set = self.used_characters
         pos = 0
@@ -138,7 +145,8 @@ class PasswordSetting:
         Missing lower case letters are inserted. If set to False all lower case letters are removed from the character
         set.
 
-        :param bool use_lower_case:
+        :param use_lower_case:
+        :type use_lower_case: bool
         """
         old_character_set = self.used_characters
         pos = 0
@@ -171,7 +179,8 @@ class PasswordSetting:
         Missing upper case letters from the default set of upper case letters are inserted. If set to False all
         default upper case letters are removed from the character set.
 
-        :param bool use_upper_case:
+        :param use_upper_case:
+        :type use_upper_case: bool
         """
         old_character_set = self.used_characters
         pos = 0
@@ -203,7 +212,8 @@ class PasswordSetting:
         If set to True the digits are moved to the default position and brought into the default order.
         Missing digits are inserted. If set to False all digits are removed from the character set.
 
-        :param bool use_digits:
+        :param use_digits:
+        :type use_digits: bool
         """
         old_character_set = self.used_characters
         pos = 0
@@ -238,7 +248,8 @@ class PasswordSetting:
         order. Missing special characters from the default set are inserted. If set to False all special characters
         from the default set are removed from the character set.
 
-        :param bool use_extra:
+        :param use_extra:
+        :type use_extra: bool
         """
         old_character_set = self.used_characters
         pos = 0
@@ -318,7 +329,8 @@ class PasswordSetting:
         You should normally pass bytes as a salt. For convenience this method also accepts strings which get
         UTF-8 encoded and stored in binary format. If in doubt pass bytes.
 
-        :param bytes salt:
+        :param salt:
+        :type salt: bytes or str
         """
         if type(salt) == bytes:
             if self.salt != salt:
@@ -344,7 +356,8 @@ class PasswordSetting:
         """
         Sets the desired length.
 
-        :param int length:
+        :param length:
+        :type length: int
         """
         if self.length != length:
             self.synced = False
@@ -363,7 +376,8 @@ class PasswordSetting:
         """
         Sets the iteration count integer.
 
-        :param int iterations:
+        :param iterations:
+        :type iterations: int
         """
         if self.iterations != iterations:
             self.synced = False
@@ -391,7 +405,8 @@ class PasswordSetting:
         """
         Sets the creation date passed as string.
 
-        :param str creation_date:
+        :param creation_date:
+        :type creation_date: str
         """
         if self.creation_date != creation_date:
             self.synced = False
@@ -425,7 +440,8 @@ class PasswordSetting:
         """
         Sets the modification date passed as string.
 
-        :param str modification_date:
+        :param modification_date:
+        :type modification_date: str
         """
         if modification_date and self.modification_date != modification_date:
             self.synced = False
@@ -458,7 +474,8 @@ class PasswordSetting:
         """
         Sets some note. This overwrites existing notes.
 
-        :param str notes:
+        :param notes:
+        :type notes: str
         """
         if notes != self.notes:
             self.synced = False
@@ -477,7 +494,8 @@ class PasswordSetting:
         """
         Sets the synced state. Call this after syncing.
 
-        :param bool is_synced:
+        :param is_synced:
+        :type is_synced: bool
         """
         self.synced = is_synced
 
@@ -508,7 +526,8 @@ class PasswordSetting:
         """
         Loads the setting from a dictionary.
 
-        :param dict loaded_setting:
+        :param loaded_setting:
+        :type loaded_setting: dict
         """
         if "username" in loaded_setting:
             self.set_username(loaded_setting["username"])

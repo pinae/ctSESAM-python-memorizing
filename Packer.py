@@ -1,5 +1,8 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
+"""
+Compression with DEFLATE.
+"""
 
 import zlib
 import struct
