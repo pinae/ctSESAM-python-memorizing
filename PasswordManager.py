@@ -3,8 +3,10 @@
 
 from hashlib import pbkdf2_hmac
 
+DEFAULT_CHARACTERS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHJKLMNPQRTUVWXYZ0123456789#!"§$%&/()[]{}=-_+*<>;:.'
 
-class CtSesam(object):
+
+class CtSesam:
     """
     Calculates passwords from masterpasswords and domain names. You may set the character set and the salt to
     something of your liking. If not set default values will be used.
@@ -14,9 +16,7 @@ class CtSesam(object):
         self.set_password_character_set()
         self.salt = "pepper".encode('utf-8')
 
-    def set_password_character_set(
-            self,
-            password_characters='abcdefghijklmnopqrstuvwxyzABCDEFGHJKLMNPQRTUVWXYZ0123456789#!"§$%&/()[]{}=-_+*<>;:.'):
+    def set_password_character_set(self, password_characters=DEFAULT_CHARACTERS):
         """
         The default character set is
         'abcdefghijklmnopqrstuvwxyzABCDEFGHJKLMNPQRTUVWXYZ0123456789#!"§$%&/()[]{}=-_+*<>;:.'. Please pass a string
