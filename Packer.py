@@ -16,7 +16,8 @@ class Packer:
         Compresses the given data with the DEFLATE algorithm. The first four bytes contain the length of the
         uncompressed data.
 
-        :param bytes data: uncompressed data
+        :param data: uncompressed data
+        :type data: bytes or str
         :return: compressed data
         :rtype: bytes
         """
@@ -43,7 +44,8 @@ class Packer:
         Decompresses the given data. Please be aware that the first four bytes are the length of the uncompressed
         data.
 
-        :param bytes compressed_data: compressed data
+        :param compressed_data: compressed data
+        :type compressed_data: bytes
         :return: uncompressed data
         :rtype: bytes
         """
