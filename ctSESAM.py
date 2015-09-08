@@ -4,7 +4,7 @@
 Main file for c't SESAM.
 """
 
-from PasswordManager import CtSesam
+from PasswordGenerator import CtSesam
 from PasswordSettingsManager import PasswordSettingsManager
 import zlib
 import argparse

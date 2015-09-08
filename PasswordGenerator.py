@@ -1,5 +1,9 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
+"""
+Password manager. It's name is CtSesam because it produces passwords which are compatible to those created by other
+c't SESAM implementations.
+"""
 
 from hashlib import pbkdf2_hmac
 
@@ -43,7 +47,8 @@ class CtSesam:
 
         :param digest: pseudo-random data
         :type digest: bytes
-        :param int length:
+        :param length:
+        :type length: int
         :returns: a password
         :rtype: str
         """
@@ -60,11 +65,16 @@ class CtSesam:
         4096 iterations will give you a password in ~0.04s. If you have a fast computer you can increase this
         to make it harder to hack your masterpassword.
 
-        :param str master_password:
-        :param str domain:
-        :param str username:
-        :param int length:
-        :param int iterations:
+        :param master_password:
+        :type master_password: str
+        :param domain:
+        :type domain: str
+        :param username:
+        :type username: str
+        :param length:
+        :type length: int
+        :param iterations:
+        :type iterations: int
         :return: a password
         :rtype: str
         """
@@ -75,4 +85,3 @@ class CtSesam:
         else:
             print('Für das Passwort stehen keine Zeichen zur Verfügung. Sie sollten die Einstellungen ändern.')
             return ''
-

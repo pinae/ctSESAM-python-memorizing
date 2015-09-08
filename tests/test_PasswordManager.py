@@ -3,7 +3,7 @@
 Test for CtSESAM class.
 """
 import unittest
-from PasswordManager import CtSesam
+from PasswordGenerator import CtSesam
 
 
 class TestCtSesam(unittest.TestCase):
