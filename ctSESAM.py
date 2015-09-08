@@ -4,8 +4,8 @@
 from PasswordManager import CtSesam
 from PasswordSettingsManager import PasswordSettingsManager
 import zlib
-import getpass
 import argparse
+import getpass
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate domain passwords from your masterpassword.")
@@ -67,8 +67,8 @@ if __name__ == "__main__":
         master_password,
         setting.get_domain(),
         setting.get_username(),
-        length=setting.get_length(),
-        iterations=setting.get_iterations())
+        setting.get_length(),
+        setting.get_iterations())
     if args.quiet:
         print(password)
     else:
