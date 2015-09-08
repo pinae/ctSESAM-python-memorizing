@@ -17,7 +17,7 @@ from base64 import b64decode, b64encode
 PASSWORD_SETTINGS_FILE = os.path.expanduser('~/.ctSESAM.pws')
 
 
-class PasswordSettingsManager(object):
+class PasswordSettingsManager:
     """
     Use this class to manage password settings. It can save the settings locally to the settings file and it can
     export them to be sent to a sync server.

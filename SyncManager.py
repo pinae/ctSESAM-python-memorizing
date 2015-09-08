@@ -10,7 +10,7 @@ from tempfile import NamedTemporaryFile
 import json
 
 
-class SyncManager(object):
+class SyncManager:
     """
     Synchronization manager. This initializes and stores settings and handles the Sync object.
     """

@@ -5,7 +5,7 @@ import zlib
 import struct
 
 
-class Packer(object):
+class Packer:
     """
     You do not need to create instances of this class because compress and decompress are both static methods.
     """
