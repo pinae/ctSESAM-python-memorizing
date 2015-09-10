@@ -51,8 +51,8 @@ if __name__ == "__main__":
         else:
             for dom in settings_manager.get_domain_list():
                 if dom[:len(domain)] == domain:
-                    answer = input("Für die Domain '" + dom + "' wurden Einstellungen gefunden. " +
-                                   "Sollen sie geladen werden [J/n]? ")
+                    print("Für die Domain '" + dom + "' wurden Einstellungen gefunden.")
+                    answer = input("Sollen sie geladen werden [J/n]? ")
                     if answer not in ["n", "N", "Nein", "nein", "NEIN", "NO", "No", "no", "nay", "not", "Not", "NOT"]:
                         domain = dom
                         setting_found = True
