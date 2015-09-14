@@ -22,6 +22,7 @@ class PasswordSetting:
     """
     def __init__(self, domain):
         self.domain = domain
+        self.url = None
         self.username = None
         self.legacy_password = None
         self.notes = None
@@ -31,6 +32,7 @@ class PasswordSetting:
         self.creation_date = datetime.now()
         self.modification_date = self.creation_date
         self.used_characters = self.get_default_character_set()
+        self.reserved = None
         self.synced = False
 
     def get_domain(self):
@@ -500,6 +502,54 @@ class PasswordSetting:
             self.synced = False
         self.notes = notes
 
+    def get_url(self):
+        """
+        Returns a url if there is one.
+
+        :return: the url
+        :rtype: str
+        """
+        if self.url:
+            return self.url
+        else:
+            return ""
+
+    def set_url(self, url):
+        """
+        Sets a url.
+
+        :param url: the url
+        :type url: str
+        """
+        if url != self.url:
+            self.synced = False
+        else:
+            return self.url
+
+    def get_reserved(self):
+        """
+        Returns the 'reserved' field
+
+        :return: reserved
+        :rtype: str
+        """
+        if self.reserved:
+            return self.reserved
+        else:
+            return ""
+
+    def set_reserved(self, reserved):
+        """
+        Sets the 'reserved' field
+
+        :param reserved: the content of the 'reserved' field
+        :type reserved: str
+        """
+        if reserved != self.reserved:
+            self.synced = False
+        else:
+            return self.reserved
+
     def is_synced(self):
         """
         Query if the synced flag is set. The flag switches to false if settings are changed.
@@ -526,6 +576,8 @@ class PasswordSetting:
         :rtype: dict
         """
         domain_object = {"domain": self.get_domain()}
+        if self.get_url():
+            domain_object["url"] = self.get_url()
         if self.get_username():
             domain_object["username"] = self.get_username()
         if self.get_legacy_password():
@@ -539,6 +591,8 @@ class PasswordSetting:
         domain_object["cDate"] = self.get_creation_date()
         domain_object["mDate"] = self.get_modification_date()
         domain_object["usedCharacters"] = self.get_character_set()
+        if self.get_reserved():
+            domain_object["reserved"] = self.get_reserved()
         return domain_object
 
     def load_from_dict(self, loaded_setting):
@@ -548,6 +602,8 @@ class PasswordSetting:
         :param loaded_setting:
         :type loaded_setting: dict
         """
+        if "url" in loaded_setting:
+            self.set_url(loaded_setting["url"])
         if "username" in loaded_setting:
             self.set_username(loaded_setting["username"])
         if "legacyPassword" in loaded_setting:
@@ -566,6 +622,8 @@ class PasswordSetting:
             self.set_modification_date(loaded_setting["mDate"])
         if "usedCharacters" in loaded_setting:
             self.set_custom_character_set(loaded_setting["usedCharacters"])
+        if "reserved" in loaded_setting:
+            self.set_reserved(loaded_setting["reserved"])
 
     def ask_for_input(self):
         """
