@@ -4,7 +4,6 @@
 The PasswordSettingsManager handles the settings and manages storage and synchronization.
 """
 
-import os
 import json
 import struct
 from datetime import datetime
@@ -14,120 +13,110 @@ from Packer import Packer
 from SyncManager import SyncManager
 from base64 import b64decode, b64encode
 
-PASSWORD_SETTINGS_FILE = os.path.expanduser('~/.ctSESAM.pws')
-
 
 class PasswordSettingsManager:
     """
     Use this class to manage password settings. It can save the settings locally to the settings file and it can
     export them to be sent to a sync server.
 
-    :param settings_file: Filename of the settings file. Defaults to PASSWORD_SETTINGS_FILE as defined in the source
-    :type settings_file: str
+    :param preference_manager: a PreferenceManager object
+    :type preference_manager: PreferenceManager
     """
-    def __init__(self, settings_file=PASSWORD_SETTINGS_FILE):
-        self.settings_file = settings_file
+    def __init__(self, preference_manager):
+        self.preference_manager = preference_manager
         self.remote_data = None
         self.settings = []
         self.sync_manager = SyncManager()
         self.update_remote = False
 
-    def load_settings(self, password, update_from_sync=True, omit_sync_settings_questions=False):
+    @staticmethod
+    def get_settings_crypter(kgk_manager):
         """
-        Loads settings from local file and from a sync server if possible.
+        Creates a settings crypter
 
-        :param str password: masterpassword
-        :param bool update_from_sync: do a sync update?
-        :param bool omit_sync_settings_questions: do not ask for questions? (Defalut: False)
-        :type password: str
+        :param kgk_manager: a kgk manager
+        :type kgk_manager: KgkManager
+        :return: Crypter for settings
+        :rtype: Crypter
         """
-        self.load_settings_from_file(password, not update_from_sync or omit_sync_settings_questions)
-        if update_from_sync:
-            self.update_from_sync(password)
+        return Crypter(Crypter.create_key(kgk_manager.get_kgk(), kgk_manager.get_salt2()) + kgk_manager.get_iv2())
 
-    def load_settings_from_file(self, password, omit_sync_settings_questions=False):
+    def load_local_settings(self, kgk_manager):
         """
-        This loads the saved settings. It is a good idea to call this method the minute you have a password.
+        This loads the saved settings. It is a good idea to call this method the minute you have a kgk manager.
 
-        :param str password: masterpassword
-        :param bool omit_sync_settings_questions: do not ask for questions? (Defalut: False)
-        :type password: str
+        :param kgk_manager: kgk manager
+        :type kgk_manager: KgkManager
         """
-        if os.path.isfile(self.settings_file):
-            file = open(self.settings_file, 'br')
-            data = file.read()
-            crypter = Crypter(data[:32], password)
-            sync_settings_len = struct.unpack('!I', data[32:36])[0]
-            if sync_settings_len > 0:
-                self.sync_manager.load_binary_sync_settings(crypter.decrypt(data[36:36+sync_settings_len]))
-            saved_settings = json.loads(str(Packer.decompress(crypter.decrypt(data[36+sync_settings_len:])),
-                                            encoding='utf-8'))
-            for domain_name in saved_settings['settings'].keys():
-                data_set = saved_settings['settings'][domain_name]
-                found = False
-                i = 0
-                while i < len(self.settings):
-                    setting = self.settings[i]
-                    if setting.get_domain() == domain_name:
-                        found = True
-                        if datetime.strptime(data_set['mDate'], "%Y-%m-%dT%H:%M:%S") > setting.get_m_date():
-                            setting.load_from_dict(data_set)
-                            setting.set_synced(setting.get_domain() in saved_settings['synced'])
-                    i += 1
-                if not found:
-                    new_setting = PasswordSetting(domain_name)
-                    new_setting.load_from_dict(data_set)
-                    new_setting.set_synced(new_setting.get_domain() in saved_settings['synced'])
-                    self.settings.append(new_setting)
-            file.close()
-        else:
-            if not omit_sync_settings_questions:
-                self.sync_manager.ask_for_sync_settings()
+        encrypted_settings = self.preference_manager.get_settings_data()
+        if len(encrypted_settings) < 40:
+            return
+        settings_crypter = PasswordSettingsManager.get_settings_crypter(kgk_manager)
+        decrypted_settings = settings_crypter.decrypt(encrypted_settings)
+        sync_settings_len = struct.unpack('!I', decrypted_settings[0:4])[0]
+        if sync_settings_len > 0:
+            self.sync_manager.load_binary_sync_settings(decrypted_settings[4:4+sync_settings_len])
+        if len(decrypted_settings) < sync_settings_len+44:
+            raise ValueError("The decrypted settings are too short.")
+        decompressed_settings = Packer.decompress(decrypted_settings[4+sync_settings_len:])
+        if len(decompressed_settings) <= 0:
+            raise PermissionError("Wrong password: The settings could not decompress.")
+        saved_settings = json.loads(str(decompressed_settings, encoding='utf-8'))
+        for domain_name in saved_settings['settings'].keys():
+            data_set = saved_settings['settings'][domain_name]
+            found = False
+            i = 0
+            while i < len(self.settings):
+                setting = self.settings[i]
+                if setting.get_domain() == domain_name:
+                    found = True
+                    if datetime.strptime(data_set['mDate'], "%Y-%m-%dT%H:%M:%S") > setting.get_m_date():
+                        setting.load_from_dict(data_set)
+                        setting.set_synced(setting.get_domain() in saved_settings['synced'])
+                i += 1
+            if not found:
+                new_setting = PasswordSetting(domain_name)
+                new_setting.load_from_dict(data_set)
+                new_setting.set_synced(new_setting.get_domain() in saved_settings['synced'])
+                self.settings.append(new_setting)
 
-    def store_settings(self, password):
-        """
-        Stores settings locally and remotely.
-
-        :param password: masterpassword
-        :type password: str
-        :return:
-        """
-        self.save_settings_to_file(password)
-        self.update_sync_server_if_necessary(password)
-
-    # noinspection PyUnresolvedReferences
-    def save_settings_to_file(self, password):
+    def store_local_settings(self, kgk_manager):
         """
         This actually saves the settings to a file on the disk. The file is encrypted so you need to supply the
         password.
 
-        :param password: masterpassword
-        :type password: str
+        :param kgk_manager: kgk manager
+        :type kgk_manager: KgkManager
         """
-        salt = os.urandom(32)
-        crypter = Crypter(salt, password)
-        file = open(self.settings_file, 'bw')
-        encrypted_sync_settings = crypter.encrypt(self.sync_manager.get_binary_sync_settings())
-        file.write(salt + struct.pack('!I', len(encrypted_sync_settings)) + encrypted_sync_settings +
-                   crypter.encrypt(Packer.compress(json.dumps(self.get_settings_as_dict()))))
-        file.close()
-        try:
-            import win32con
-            import win32api
-            win32api.SetFileAttributes(self.settings_file, win32con.FILE_ATTRIBUTE_HIDDEN)
-        except ImportError:
-            pass
+        kgk_manager.fresh_salt2()
+        kgk_manager.fresh_iv2()
+        settings_crypter = PasswordSettingsManager.get_settings_crypter(kgk_manager)
+        sync_settings = self.sync_manager.get_binary_sync_settings()
+        self.preference_manager.store_settings_data(settings_crypter.encrypt(
+            struct.pack('!I', len(sync_settings)) + sync_settings +
+            Packer.compress(json.dumps(self.get_settings_as_dict()))))
+        kgk_manager.store_local_kgk_block()
 
-    def update_sync_server_if_necessary(self, password):
+    def load_settings(self, kgk_manager, password, no_sync=False):
         """
-        Checks if the sync server needs to be updated. If necessary it does a push.
+        Loads settings from local file and from a sync server if possible.
 
-        :param password: masterpassword
+        :param kgk_manager: kgk manager
+        :type kgk_manager: KgkManager
+        :param password: the masterpassword
         :type password: str
+        :param no_sync: skip the sync update?
+        :type no_sync: bool
         """
-        if self.update_remote:
-            if self.sync_manager.push(self.get_export_data(password)):
-                self.set_all_settings_to_synced()
+        self.load_local_settings(kgk_manager)
+        if not no_sync:
+            pull_successful, data = self.sync_manager.pull()
+            if pull_successful:
+                if len(data) > 0:
+                    kgk_manager.update_from_blob(password.encode('utf-8'), b64decode(data))
+                    self.update_from_export_data(kgk_manager, b64decode(data))
+            else:
+                print("Sync failed: No connection to the server.")
 
     def get_setting(self, domain):
         """
@@ -192,24 +181,23 @@ class PasswordSettingsManager:
         :return: a dictionary
         :rtype: dict
         """
-        settings_list = {'settings': {}, 'synced': []}
+        settings_dict = {'settings': {}, 'synced': []}
         for setting in self.settings:
-            settings_list['settings'][setting.get_domain()] = setting.to_dict()
+            settings_dict['settings'][setting.get_domain()] = setting.to_dict()
             if setting.is_synced():
-                settings_list['synced'].append(setting.get_domain())
-        return settings_list
+                settings_dict['synced'].append(setting.get_domain())
+        return settings_dict
 
-    def get_export_data(self, password, salt=None):
+    def get_export_data(self, kgk_manager):
         """
         This gives you a base64 encoded string of encrypted settings data (the blob).
 
-        :param password: masterpassword
-        :type password: str
-        :param salt: salt for the encryption: This is for testing only! Do not set it normally!
-        :type salt: bytes
+        :param kgk_manager: kgk manager
+        :type kgk_manager: KgkManager
         :return: encrypted settings blob
         :rtype: str
         """
+        kgk_block = kgk_manager.get_fresh_encrypted_kgk()
         settings_list = self.get_settings_as_dict()['settings']
         if self.remote_data:
             for domain_name in self.remote_data.keys():
@@ -225,70 +213,87 @@ class PasswordSettingsManager:
                         'mDate': datetime.now(),
                         'deleted': True
                     }
-        if not salt:
-            salt = os.urandom(32)
-        crypter = Crypter(salt, password)
-        return b64encode(b'\x00' + salt + crypter.encrypt(Packer.compress(json.dumps(settings_list))))
+        settings_crypter = self.get_settings_crypter(kgk_manager)
+        return b64encode(b'\x01' + kgk_manager.get_kgk_crypter_salt() + kgk_block + settings_crypter.encrypt(
+            Packer.compress(json.dumps(settings_list))))
 
-    def update_from_sync(self, password):
+    def update_from_export_data(self, kgk_manager, blob):
         """
         Call this method to pull settings from the sync server.
 
-        :param password: the masterpassword
-        :type password: str
+        :param kgk_manager: the kgk manager used for the decryption
+        :type kgk_manager: KgkManager
+        :param blob: the export data
+        :type blob: bytes
         """
-        pull_successful, data = self.sync_manager.pull()
-        if not pull_successful:
-            print("Sync failed: No connection to the server.")
+        if not blob[0] == 1:
+            print("Version error: Wrong data format. Could not import anything.")
+            return True
+        settings_crypter = self.get_settings_crypter(kgk_manager)
+        decrypted_settings = settings_crypter.decrypt(blob[145:])
+        if len(decrypted_settings) <= 0:
+            print("Wrong password.")
             return False
-        if not len(data) > 0:
-            return False
-        binary_data = b64decode(data)
-        data_version = binary_data[:1]
-        if data_version == b'\x00':
-            encryption_salt = binary_data[1:33]
-            encrypted_data = binary_data[33:]
-            crypter = Crypter(encryption_salt, password)
-            self.remote_data = json.loads(
-                str(Packer.decompress(crypter.decrypt(encrypted_data)), encoding='utf-8'))
-            self.update_remote = False
-            for domain_name in self.remote_data.keys():
-                data_set = self.remote_data[domain_name]
-                found = False
-                i = 0
-                while i < len(self.settings):
-                    setting = self.settings[i]
-                    if setting.get_domain() == domain_name:
-                        found = True
-                        if datetime.strptime(data_set['mDate'], "%Y-%m-%dT%H:%M:%S") > setting.get_m_date():
-                            if 'deleted' in data_set and data_set['deleted']:
-                                self.settings.pop(i)
-                            else:
-                                setting.load_from_dict(data_set)
-                                setting.set_synced(True)
-                                self.update_remote = True
-                                i += 1
+        self.remote_data = json.loads(str(Packer.decompress(decrypted_settings), encoding='utf-8'))
+        self.update_remote = False
+        for domain_name in self.remote_data.keys():
+            data_set = self.remote_data[domain_name]
+            found = False
+            i = 0
+            while i < len(self.settings):
+                setting = self.settings[i]
+                if setting.get_domain() == domain_name:
+                    found = True
+                    if datetime.strptime(data_set['mDate'], "%Y-%m-%dT%H:%M:%S") > setting.get_m_date():
+                        if 'deleted' in data_set and data_set['deleted']:
+                            self.settings.pop(i)
                         else:
+                            setting.load_from_dict(data_set)
+                            setting.set_synced(True)
+                            self.update_remote = True
                             i += 1
                     else:
                         i += 1
-                if not found:
-                    new_setting = PasswordSetting(domain_name)
-                    new_setting.load_from_dict(data_set)
-                    new_setting.set_synced(True)
-                    self.settings.append(new_setting)
-            for setting in self.settings:
-                found = False
-                for domain_name in self.remote_data.keys():
-                    data_set = self.remote_data[domain_name]
-                    if setting.get_domain() == domain_name:
-                        found = True
-                        if setting.get_m_date() >= datetime.strptime(data_set['mDate'], "%Y-%m-%dT%H:%M:%S"):
-                            self.update_remote = True
-                if not found:
-                    self.update_remote = True
-        else:
-            print("Unknown data format version! Could not update.")
+                else:
+                    i += 1
+            if not found:
+                new_setting = PasswordSetting(domain_name)
+                new_setting.load_from_dict(data_set)
+                new_setting.set_synced(True)
+                self.settings.append(new_setting)
+        for setting in self.settings:
+            found = False
+            for domain_name in self.remote_data.keys():
+                data_set = self.remote_data[domain_name]
+                if setting.get_domain() == domain_name:
+                    found = True
+                    if setting.get_m_date() >= datetime.strptime(data_set['mDate'], "%Y-%m-%dT%H:%M:%S"):
+                        self.update_remote = True
+            if not found:
+                self.update_remote = True
+        self.store_local_settings(kgk_manager)
+        return self.update_remote
+
+    def store_settings(self, kgk_manager):
+        """
+        Stores settings locally and remotely.
+
+        :param kgk_manager: the kgk manager used for the encryption
+        :type kgk_manager: KgkManager
+        """
+        self.store_local_settings(kgk_manager)
+        self.update_sync_server_if_necessary(kgk_manager)
+
+    def update_sync_server_if_necessary(self, kgk_manager):
+        """
+        Checks if the sync server needs to be updated. If necessary it does a push.
+
+        :param kgk_manager: the kgk manager used for the encryption
+        :type kgk_manager: KgkManager
+        """
+        if self.update_remote:
+            if self.sync_manager.push(self.get_export_data(kgk_manager)):
+                self.set_all_settings_to_synced()
 
     def set_all_settings_to_synced(self):
         """

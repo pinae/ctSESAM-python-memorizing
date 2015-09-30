@@ -5,6 +5,8 @@ Main file for c't SESAM.
 """
 
 from PasswordGenerator import CtSesam
+from PreferenceManager import PreferenceManager
+from KgkManager import KgkManager
 from PasswordSettingsManager import PasswordSettingsManager
 import zlib
 import argparse
@@ -28,10 +30,15 @@ if __name__ == "__main__":
         master_password = args.master_password
     else:
         master_password = getpass.getpass(prompt='Masterpasswort: ')
-    settings_manager = PasswordSettingsManager()
+    preference_manager = PreferenceManager()
+    kgk_manager = KgkManager(preference_manager)
+    kgk_manager.decrypt_kgk(preference_manager.get_kgk_block(),
+                            password=master_password.encode('utf-8'),
+                            salt=preference_manager.get_salt())
+    settings_manager = PasswordSettingsManager(preference_manager)
     try:
-        settings_manager.load_settings(master_password, not args.no_sync, args.update_sync_settings)
-        if args.update_sync_settings:
+        settings_manager.load_settings(kgk_manager, master_password, args.no_sync)
+        if not args.no_sync and (args.update_sync_settings or not settings_manager.sync_manager.has_settings()):
             settings_manager.sync_manager.ask_for_sync_settings()
     except zlib.error:
         print("Falsches Masterpasswort. Es wurden keine Einstellungen geladen.")
@@ -62,7 +69,7 @@ if __name__ == "__main__":
     if setting_found and setting.has_username() and not args.quiet:
         print("Benutzername: " + setting.get_username())
     settings_manager.set_setting(setting)
-    settings_manager.store_settings(master_password)
+    settings_manager.store_settings(kgk_manager)
     if setting_found and setting.has_legacy_password():
         if args.quiet:
             print(setting.get_legacy_password())

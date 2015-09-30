@@ -64,8 +64,6 @@ class SyncManager:
             self.certificate_file.write(self.certificate.encode('utf-8'))
             self.certificate_file.seek(0)
             self.create_sync()
-        else:
-            print("Sync settings konnten nicht geladen werden.")
 
     def ask_for_sync_settings(self):
         """
@@ -97,6 +95,15 @@ class SyncManager:
         creates a sync object.
         """
         self.sync = Sync(self.server_address, self.username, self.password, self.certificate_file.name)
+
+    def has_settings(self):
+        """
+        Returns true if pull or push are possible
+
+        :return: Are there settings?
+        :rtype: bool
+        """
+        return bool(self.sync)
 
     def pull(self):
         """
