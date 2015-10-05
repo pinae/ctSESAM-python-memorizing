@@ -4,8 +4,8 @@
 Manages Sync connections.
 """
 
-from Sync import Sync
-from Packer import Packer
+from sync import Sync
+from packer import Packer
 from tempfile import NamedTemporaryFile
 import json
 

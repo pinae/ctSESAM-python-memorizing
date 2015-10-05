@@ -7,10 +7,10 @@ The PasswordSettingsManager handles the settings and manages storage and synchro
 import json
 import struct
 from datetime import datetime
-from PasswordSetting import PasswordSetting
-from Crypter import Crypter
-from Packer import Packer
-from SyncManager import SyncManager
+from password_setting import PasswordSetting
+from crypter import Crypter
+from packer import Packer
+from sync_manager import SyncManager
 from base64 import b64decode, b64encode
 
 

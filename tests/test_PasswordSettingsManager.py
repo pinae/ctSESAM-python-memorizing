@@ -5,10 +5,12 @@ import unittest
 import os
 import json
 import struct
-from PasswordSettingsManager import PasswordSettingsManager
-from PasswordSetting import PasswordSetting
-from Crypter import Crypter
-from Packer import Packer
+from kgk_manager import KgkManager
+from preference_manager import PreferenceManager
+from password_settings_manager import PasswordSettingsManager
+from password_setting import PasswordSetting
+from crypter import Crypter
+from packer import Packer
 from base64 import b64encode, b64decode
 
 
@@ -54,14 +56,25 @@ class MockSyncManager(object):
             }
         }
         salt = os.urandom(32)
-        crypter = Crypter(salt, 'xyz')
-        return True, str(b64encode(b'\x00' + salt + crypter.encrypt(
+        kgk_manager = KgkManager(PreferenceManager(os.path.expanduser('~/.ctSESAM_test_extra.pws')))
+        kgk_manager.create_new_kgk()
+        kgk_block = kgk_manager.create_and_save_new_kgk_block(kgk_manager.get_kgk_crypter(b'xyz', salt))
+        settings_crypter = PasswordSettingsManager.get_settings_crypter(kgk_manager)
+        return True, str(b64encode(b'\x01' + salt + kgk_block + settings_crypter.encrypt(
             Packer.compress(json.dumps(remote_data).encode('utf-8')))), encoding='utf-8')
+
+    def get_binary_sync_settings(self):
+        """
+        :return:
+        :rtype: bytes
+        """
+        return b''
 
 
 class TestPasswordSettingsManager(unittest.TestCase):
     def setUp(self):
-        self.manager = PasswordSettingsManager(os.path.expanduser('~/.ctSESAM_test.pws'))
+        self.preference_manager = PreferenceManager(os.path.expanduser('~/.ctSESAM_test.pws'))
+        self.manager = PasswordSettingsManager(self.preference_manager)
 
     # noinspection PyUnresolvedReferences
     def tearDown(self):
@@ -81,17 +94,22 @@ class TestPasswordSettingsManager(unittest.TestCase):
         self.assertEqual('abc.de', setting.get_domain())
         self.assertIn('abc.de', self.manager.get_domain_list())
 
-    def test_save_settings_to_file(self):
+    def test_store_local_settings(self):
         self.manager.get_setting('abc.de')
         new_setting = PasswordSetting('hugo.com')
         new_setting.set_length(12)
         self.manager.set_setting(new_setting)
-        self.manager.save_settings_to_file('xyz')
+        kgk_manager = KgkManager(self.preference_manager)
+        kgk_manager.create_new_kgk()
+        salt = os.urandom(32)
+        kgk_manager.create_and_save_new_kgk_block(Crypter(Crypter.createIvKey(b'xyz', salt, iterations=3)))
+        self.manager.store_local_settings(kgk_manager)
         with open(os.path.expanduser('~/.ctSESAM_test.pws'), 'br') as f:
             data = f.read()
-        crypter = Crypter(data[:32], 'xyz')
-        sync_settings_len = struct.unpack('!I', data[32:36])[0]
-        data = json.loads(Packer.decompress(crypter.decrypt(data[36+sync_settings_len:])).decode('utf8'))
+        settings_crypter = PasswordSettingsManager.get_settings_crypter(kgk_manager)
+        decrypted_settings = settings_crypter.decrypt(data[144:])
+        sync_settings_len = struct.unpack('!I', decrypted_settings[:4])[0]
+        data = json.loads(Packer.decompress(decrypted_settings[4+sync_settings_len:]).decode('utf8'))
         self.assertEqual('abc.de', data['settings']['abc.de']['domain'])
         self.assertEqual(10, data['settings']['abc.de']['length'])
         self.assertEqual('hugo.com', data['settings']['hugo.com']['domain'])
@@ -119,11 +137,16 @@ class TestPasswordSettingsManager(unittest.TestCase):
             'synced': []
         }
         salt = os.urandom(32)
-        crypter = Crypter(salt, 'xyz')
+        data = json.dumps(settings).encode('utf-8')
+        kgk_manager = KgkManager(self.preference_manager)
+        kgk_manager.create_new_kgk()
+        kgk_block = kgk_manager.create_and_save_new_kgk_block(Crypter(Crypter.createIvKey(b'xyz', salt, iterations=3)))
+        crypter = PasswordSettingsManager.get_settings_crypter(kgk_manager)
         f = open(os.path.expanduser('~/.ctSESAM_test.pws'), 'bw')
-        f.write(salt + struct.pack('!I', 0) + crypter.encrypt(Packer.compress(json.dumps(settings).encode('utf-8'))))
+        f.write(salt + kgk_block + crypter.encrypt(struct.pack('!I', 0) + Packer.compress(data)))
         f.close()
-        self.manager.load_settings_from_file('xyz')
+        self.preference_manager.read_file()
+        self.manager.load_local_settings(kgk_manager)
         self.assertIn('unit.test', self.manager.get_domain_list())
         self.assertIn('some.domain', self.manager.get_domain_list())
         self.assertEqual(11, self.manager.get_setting('unit.test').get_length())
@@ -174,14 +197,21 @@ class TestPasswordSettingsManager(unittest.TestCase):
             'synced': []
         }
         salt = os.urandom(32)
-        crypter = Crypter(salt, 'xyz')
         f = open(os.path.expanduser('~/.ctSESAM_test.pws'), 'bw')
         data = json.dumps(settings).encode('utf-8')
-        f.write(salt + struct.pack('!I', 0) + crypter.encrypt(Packer.compress(data)))
+        kgk_manager = KgkManager(self.preference_manager)
+        kgk_manager.create_new_kgk()
+        kgk_block = kgk_manager.create_and_save_new_kgk_block(Crypter(Crypter.createIvKey(b'xyz', salt, iterations=3)))
+        crypter = PasswordSettingsManager.get_settings_crypter(kgk_manager)
+        f.write(salt + kgk_block + crypter.encrypt(struct.pack('!I', 0) + Packer.compress(data)))
         f.close()
-        self.manager.load_settings_from_file('xyz')
+        self.preference_manager.read_file()
+        self.manager.load_local_settings(kgk_manager)
+        self.assertIn('settings', self.manager.get_settings_as_dict())
+        self.assertIn('unit.test', self.manager.get_settings_as_dict()['settings'])
         self.assertEqual(settings['settings']['unit.test'],
                          self.manager.get_settings_as_dict()['settings']['unit.test'])
+        self.assertIn('some.domain', self.manager.get_settings_as_dict()['settings'])
         self.assertEqual(settings['settings']['some.domain'],
                          self.manager.get_settings_as_dict()['settings']['some.domain'])
         self.assertEqual(settings, self.manager.get_settings_as_dict())
@@ -213,18 +243,26 @@ class TestPasswordSettingsManager(unittest.TestCase):
             'synced': []
         }
         salt = os.urandom(32)
-        crypter = Crypter(salt, 'xyz')
+        kgk_manager = KgkManager(self.preference_manager)
+        kgk_manager.create_new_kgk()
+        kgk_block = kgk_manager.create_and_save_new_kgk_block(Crypter(Crypter.createIvKey(b'xyz', salt, iterations=3)))
+        crypter = PasswordSettingsManager.get_settings_crypter(kgk_manager)
         f = open(os.path.expanduser('~/.ctSESAM_test.pws'), 'bw')
-        f.write(salt + struct.pack('!I', 0) + crypter.encrypt(
-            Packer.compress(json.dumps(settings).encode('utf-8'))))
+        f.write(salt + kgk_block +
+                crypter.encrypt(struct.pack('!I', 0) + Packer.compress(json.dumps(settings).encode('utf-8'))))
         f.close()
-        self.manager.load_settings_from_file('xyz')
-        data = b64decode(self.manager.get_export_data('xyz'))
+        self.preference_manager.read_file()
+        self.manager.load_local_settings(kgk_manager)
+        data = b64decode(self.manager.get_export_data(kgk_manager))
+        self.assertEqual(b'\x01', data[:1])
         salt = data[1:33]
-        crypter = Crypter(salt, 'xyz')
+        kgk_crypter = Crypter(Crypter.createIvKey(b'xyz', salt, iterations=3))
+        kgk_manager2 = KgkManager(self.preference_manager)
+        kgk_manager2.decrypt_kgk(data[33:145], kgk_crypter)
+        settings_crypter = PasswordSettingsManager.get_settings_crypter(kgk_manager2)
         self.assertEqual(
             settings['settings'],
-            json.loads(str(Packer.decompress(crypter.decrypt(data[33:])), encoding='utf-8')))
+            json.loads(str(Packer.decompress(settings_crypter.decrypt(data[145:])), encoding='utf-8')))
 
     def test_update_from_sync(self):
         settings = {
@@ -253,17 +291,30 @@ class TestPasswordSettingsManager(unittest.TestCase):
             'synced': []
         }
         salt = os.urandom(32)
-        crypter = Crypter(salt, 'xyz')
+        kgk_manager = KgkManager(self.preference_manager)
+        kgk_manager.create_new_kgk()
+        kgk_block = kgk_manager.create_and_save_new_kgk_block(
+            Crypter(Crypter.createIvKey('xyz'.encode('utf-8'), salt)))
+        crypter = PasswordSettingsManager.get_settings_crypter(kgk_manager)
         f = open(os.path.expanduser('~/.ctSESAM_test.pws'), 'bw')
-        f.write(salt + struct.pack('!I', 0) + crypter.encrypt(
-            Packer.compress(json.dumps(settings).encode('utf-8'))))
+        f.write(salt + kgk_block +
+                crypter.encrypt(struct.pack('!I', 0) + Packer.compress(json.dumps(settings).encode('utf-8'))))
         f.close()
-        self.manager.load_settings_from_file('xyz')
+        self.preference_manager.read_file()
         self.manager.sync_manager = MockSyncManager()
-        self.manager.update_from_sync('xyz')
+        self.manager.load_settings(kgk_manager, 'xyz')
         self.assertIn('unit.test', self.manager.get_domain_list())
         self.assertIn('some.domain', self.manager.get_domain_list())
         self.assertIn('third.domain', self.manager.get_domain_list())
         self.assertEqual(5001, self.manager.get_setting('unit.test').get_iterations())
         self.assertEqual(4096, self.manager.get_setting('some.domain').get_iterations())
         self.assertEqual(4098, self.manager.get_setting('third.domain').get_iterations())
+        file = os.path.expanduser('~/.ctSESAM_test_extra.pws')
+        if os.path.isfile(file):
+            try:
+                import win32con
+                import win32api
+                win32api.SetFileAttributes(file, win32con.FILE_ATTRIBUTE_NORMAL)
+            except ImportError:
+                pass
+            os.remove(file)

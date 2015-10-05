@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import unittest
-from Packer import Packer
+from packer import Packer
 from base64 import b64decode, b64encode
 
 

@@ -26,7 +26,7 @@ class Crypter:
             self.iv = b'\xb5\x4f\xcf\xb0\x88\x09\x55\xe5\xbf\x79\xaf\x37\x71\x1c\x28\xb6'
 
     @staticmethod
-    def create_key(password, salt):
+    def create_key(password, salt, iterations=1024):
         """
         Creates a key for encrypting/decrypting settings.
 
@@ -34,13 +34,15 @@ class Crypter:
         :type password: bytes
         :param salt: the salt2
         :param salt: bytes
+        :param iterations: an iteration count
+        :type iterations: int
         :return: a key
         :rtype: bytes
         """
-        return pbkdf2_hmac('sha256', password, salt, 1024)
+        return pbkdf2_hmac('sha256', password, salt, iterations)
 
     @staticmethod
-    def createIvKey(password, salt):
+    def createIvKey(password, salt, iterations=32768):
         """
         Creates a key for encrypting/decrypting kgk blocks.
 
@@ -48,10 +50,12 @@ class Crypter:
         :type password: bytes
         :param salt: the salt2
         :param salt: bytes
+        :param iterations: an iteration count
+        :type iterations: int
         :return: a key
         :rtype: bytes
         """
-        return pbkdf2_hmac('sha384', password, salt, 32768)
+        return pbkdf2_hmac('sha384', password, salt, iterations)
 
     @staticmethod
     def createSalt():

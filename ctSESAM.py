@@ -4,10 +4,10 @@
 Main file for c't SESAM.
 """
 
-from PasswordGenerator import CtSesam
-from PreferenceManager import PreferenceManager
-from KgkManager import KgkManager
-from PasswordSettingsManager import PasswordSettingsManager
+from password_generator import CtSesam
+from preference_manager import PreferenceManager
+from kgk_manager import KgkManager
+from password_settings_manager import PasswordSettingsManager
 import zlib
 import argparse
 import getpass

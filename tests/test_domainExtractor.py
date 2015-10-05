@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import unittest
-from domainExtractor import extract_top_domain, extract_full_domain
+from domain_extractor import extract_top_domain, extract_full_domain
 
 
 class TestDomainExtractor(unittest.TestCase):

@@ -16,12 +16,17 @@ class PreferenceManager:
     :type settings_file: str
     """
     def __init__(self, settings_file=PASSWORD_SETTINGS_FILE):
+        self.data = b''
         self.settings_file = settings_file
-        if os.path.isfile(settings_file):
-            with open(settings_file, 'br') as file:
+        self.read_file()
+
+    def read_file(self):
+        """
+        Read the settings file.
+        """
+        if os.path.isfile(self.settings_file):
+            with open(self.settings_file, 'br') as file:
                 self.data = file.read()
-        else:
-            self.data = b''
 
     def get_salt(self):
         """

@@ -4,8 +4,8 @@
 The KGK manager stores the kgk and manages storage and encryption of kgk blocks.
 """
 
-from PreferenceManager import PreferenceManager
-from Crypter import Crypter
+from preference_manager import PreferenceManager
+from crypter import Crypter
 import os
 
 
@@ -174,15 +174,20 @@ class KgkManager:
 
     def create_and_save_new_kgk_block(self, kgk_crypter=None):
         """
+        Creates a fresh kgk block and saves it.
 
         :param kgk_crypter:
         :type kgk_crypter: Crypter
+        :return: kgk block
+        :rtype: bytes
         """
         self.salt = Crypter.createSalt()
         self.preference_manager.store_salt(self.salt)
         if kgk_crypter:
             self.kgk_crypter = kgk_crypter
-        self.preference_manager.store_kgk_block(self.get_fresh_encrypted_kgk())
+        kgk_block = self.get_fresh_encrypted_kgk()
+        self.preference_manager.store_kgk_block(kgk_block)
+        return kgk_block
 
     def update_from_blob(self, password, blob):
         """
@@ -204,7 +209,8 @@ class KgkManager:
         Stores the local kgk block.
         """
         self.preference_manager.store_kgk_block(self.get_encrypted_kgk())
-        self.store_salt(self.salt)
+        if type(self.salt) == bytes:
+            self.store_salt(self.salt)
 
     def reset(self):
         """

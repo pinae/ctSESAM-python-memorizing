@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import unittest
-from PasswordSetting import PasswordSetting
+from password_setting import PasswordSetting
 import json
 from base64 import b64encode
 
@@ -24,9 +24,9 @@ class TestPasswordSetting(unittest.TestCase):
         s = PasswordSetting("unit.test")
         self.assertFalse(s.use_custom_character_set())
         self.assertEqual("abcdefghijklmnopqrstuvwxyz" +
-            "ABCDEFGHJKLMNPQRTUVWXYZ" +
-            "0123456789" +
-            "#!\"§$%&/()[]{}=-_+*<>;:.", s.get_character_set())
+                         "ABCDEFGHJKLMNPQRTUVWXYZ" +
+                         "0123456789" +
+                         "#!\"§$%&/()[]{}=-_+*<>;:.", s.get_character_set())
         s.set_custom_character_set("&=Oo0wWsS$#uUvVzZ")
         self.assertTrue(s.use_custom_character_set())
         self.assertEqual("&=Oo0wWsS$#uUvVzZ", s.get_character_set())
@@ -37,9 +37,9 @@ class TestPasswordSetting(unittest.TestCase):
             "#!\"§$%&/()[]{}=-_+*<>;:.")
         self.assertFalse(s.use_custom_character_set())
         self.assertEqual("abcdefghijklmnopqrstuvwxyz" +
-            "ABCDEFGHJKLMNPQRTUVWXYZ" +
-            "0123456789" +
-            "#!\"§$%&/()[]{}=-_+*<>;:.", s.get_character_set())
+                         "ABCDEFGHJKLMNPQRTUVWXYZ" +
+                         "0123456789" +
+                         "#!\"§$%&/()[]{}=-_+*<>;:.", s.get_character_set())
         s.set_use_letters(False)
         self.assertEqual("0123456789#!\"§$%&/()[]{}=-_+*<>;:.", s.get_character_set())
         s.set_use_letters(True)

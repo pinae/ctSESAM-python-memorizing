@@ -3,7 +3,7 @@
 
 import unittest
 from unittest.mock import patch
-from Sync import Sync
+from sync import Sync
 from base64 import b64encode
 import json
 
