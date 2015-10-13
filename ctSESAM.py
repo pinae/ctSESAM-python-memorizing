@@ -8,7 +8,7 @@ from password_generator import CtSesam
 from preference_manager import PreferenceManager
 from kgk_manager import KgkManager
 from password_settings_manager import PasswordSettingsManager
-import zlib
+from base64 import b64decode
 import argparse
 import getpass
 
@@ -30,8 +30,10 @@ if __name__ == "__main__":
         master_password = args.master_password
     else:
         master_password = getpass.getpass(prompt='Masterpasswort: ')
+    kgk_manager = KgkManager()
     preference_manager = PreferenceManager()
-    kgk_manager = KgkManager(preference_manager)
+    kgk_exists = len(preference_manager.get_kgk_block()) == 112
+    kgk_manager.set_preference_manager(preference_manager)
     kgk_manager.decrypt_kgk(preference_manager.get_kgk_block(),
                             password=master_password.encode('utf-8'),
                             salt=preference_manager.get_salt())
@@ -40,7 +42,24 @@ if __name__ == "__main__":
         settings_manager.load_settings(kgk_manager, master_password, args.no_sync)
         if not args.no_sync and (args.update_sync_settings or not settings_manager.sync_manager.has_settings()):
             settings_manager.sync_manager.ask_for_sync_settings()
-    except zlib.error:
+            print("Teste die Verbindung...")
+            pull_successful, data = settings_manager.sync_manager.pull()
+            if pull_successful and len(data) > 0:
+                remote_kgk_manager = KgkManager()
+                remote_kgk_manager.update_from_blob(master_password.encode('utf-8'), b64decode(data))
+                if kgk_exists and remote_kgk_manager.has_kgk() and kgk_manager.has_kgk() and \
+                   kgk_manager.get_kgk() != remote_kgk_manager.get_kgk():
+                    print("Lokal und auf dem Server gibt es unterschiedliche KGKs. Das ist ein Problem!")
+                else:
+                    if not kgk_exists:
+                        kgk_manager = remote_kgk_manager
+                        kgk_manager.set_preference_manager(preference_manager)
+                        kgk_manager.store_local_kgk_block()
+                    settings_manager.update_from_export_data(remote_kgk_manager, b64decode(data))
+                    print("Verbindung erfolgreich getestet.")
+            else:
+                print("Es konnte keine Verbindung aufgebaut werden.")
+    except ImportError: #ValueError:
         print("Falsches Masterpasswort. Es wurden keine Einstellungen geladen.")
     if args.domain:
         domain = args.domain
@@ -76,15 +95,12 @@ if __name__ == "__main__":
         else:
             print("klassisches Passwort: " + setting.get_legacy_password())
     else:
-        sesam = CtSesam()
-        sesam.set_password_character_set(setting.get_character_set())
-        sesam.set_salt(setting.get_salt())
-        password = sesam.generate(
-            master_password,
-            setting.get_domain(),
-            setting.get_username(),
-            setting.get_length(),
-            setting.get_iterations())
+        sesam = CtSesam(setting.get_domain(),
+                        setting.get_username(),
+                        kgk_manager.get_kgk(),
+                        setting.get_salt(),
+                        setting.get_iterations())
+        password = sesam.generate(setting)
         if args.quiet:
             print(password)
         else:

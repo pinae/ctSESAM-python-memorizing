@@ -12,6 +12,7 @@ from crypter import Crypter
 from packer import Packer
 from sync_manager import SyncManager
 from base64 import b64decode, b64encode
+from kgk_manager import KgkManager
 
 
 class PasswordSettingsManager:
@@ -111,10 +112,13 @@ class PasswordSettingsManager:
         self.load_local_settings(kgk_manager)
         if not no_sync:
             pull_successful, data = self.sync_manager.pull()
-            if pull_successful:
-                if len(data) > 0:
-                    kgk_manager.update_from_blob(password.encode('utf-8'), b64decode(data))
-                    self.update_from_export_data(kgk_manager, b64decode(data))
+            print(pull_successful)
+            if pull_successful and len(data) > 0:
+                remote_kgk_manager = KgkManager()
+                remote_kgk_manager.update_from_blob(password.encode('utf-8'), b64decode(data))
+                if remote_kgk_manager.has_kgk() and kgk_manager.get_kgk() != remote_kgk_manager.get_kgk():
+                    raise ValueError("KGK mismatch! This are not your settings!")
+                self.update_from_export_data(remote_kgk_manager, b64decode(data))
             else:
                 print("Sync failed: No connection to the server.")
 

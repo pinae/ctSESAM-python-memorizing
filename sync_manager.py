@@ -50,6 +50,8 @@ class SyncManager:
         :param bytes data: packed json data of sync settings
         """
         settings_dict = json.loads(str(Packer.decompress(data), encoding='utf-8'))
+        print("Sync Settings:")
+        print(settings_dict)
         if "server-address" in settings_dict and \
            "username" in settings_dict and \
            "password" in settings_dict and \
@@ -84,11 +86,6 @@ class SyncManager:
         self.certificate_file.write(self.certificate.encode('utf-8'))
         self.certificate_file.seek(0)
         self.create_sync()
-        print("Teste die Verbindung...")
-        if len(self.sync.pull()) > 0:
-            print("Verbindung erfolgreich getestet.")
-        else:
-            print("Es konnte keine Verbindung aufgebaut werden.")
 
     def create_sync(self):
         """

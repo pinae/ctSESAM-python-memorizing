@@ -7,9 +7,11 @@ Sets of password settings for a domain.
 from datetime import datetime
 import getpass
 import string
+import re
 from base64 import b64encode, b64decode
+from random import shuffle
+from crypter import Crypter
 
-DEFAULT_SALT = "pepper".encode('utf-8')
 DEFAULT_CHARACTER_SET_LOWER_CASE = "abcdefghijklmnopqrstuvwxyz"
 DEFAULT_CHARACTER_SET_UPPER_CASE = "ABCDEFGHJKLMNPQRTUVWXYZ"
 DEFAULT_CHARACTER_SET_DIGITS = string.digits
@@ -27,12 +29,14 @@ class PasswordSetting:
         self.legacy_password = None
         self.notes = None
         self.iterations = 4096
-        self.salt = DEFAULT_SALT
+        self.salt = Crypter.createSalt()
         self.length = 10
         self.creation_date = datetime.now()
         self.modification_date = self.creation_date
         self.used_characters = self.get_default_character_set()
+        self.extra_characters = DEFAULT_CHARACTER_SET_EXTRA
         self.reserved = None
+        self.template = None
         self.synced = False
 
     def get_domain(self):
@@ -325,6 +329,58 @@ class PasswordSetting:
             self.synced = False
         self.used_characters = character_set
 
+    @staticmethod
+    def get_lower_character_set():
+        """
+        Returns the default lower case characters.
+
+        :return: string with lower case characters
+        :rtype: str
+        """
+        return DEFAULT_CHARACTER_SET_LOWER_CASE
+
+    @staticmethod
+    def get_upper_character_set():
+        """
+        Returns the default upper case characters.
+
+        :return: string with upper case characters
+        :rtype: str
+        """
+        return DEFAULT_CHARACTER_SET_UPPER_CASE
+
+    @staticmethod
+    def get_digits_character_set():
+        """
+        Returns the default digits characters.
+
+        :return: string with digits characters
+        :rtype: str
+        """
+        return DEFAULT_CHARACTER_SET_DIGITS
+
+    def get_extra_character_set(self):
+        """
+        Returns the set of special characters.
+
+        :return: set of special characters
+        :rtype: str
+        """
+        return self.extra_characters
+
+    def set_extra_character_set(self, extra_set):
+        """
+        Sets the set of special characters. This function does not check if these characters are in the whole
+        character set.
+
+        :param extra_set: string of special characters
+        :type extra_set: str
+        """
+        if extra_set is None or len(extra_set) <= 0:
+            self.extra_characters = DEFAULT_CHARACTER_SET_EXTRA
+        else:
+            self.extra_characters = extra_set
+
     def get_salt(self):
         """
         Returns the salt.
@@ -333,17 +389,6 @@ class PasswordSetting:
         :rtype: bytes
         """
         return self.salt
-
-    @staticmethod
-    def get_default_salt():
-        """
-        This returns the default salt. This is completely independent of the salt stored at instances
-        of this class.
-
-        :return: the default salt
-        :rtype: bytes
-        """
-        return DEFAULT_SALT
 
     def set_salt(self, salt):
         """
@@ -526,29 +571,122 @@ class PasswordSetting:
         else:
             return self.url
 
-    def get_reserved(self):
+    def get_full_template(self):
         """
-        Returns the 'reserved' field
+        Constructs a template string with digit and semicolon.
 
-        :return: reserved
+        :return: template string
         :rtype: str
         """
-        if self.reserved:
-            return self.reserved
+        if self.use_digits() and not self.use_lower_case() and \
+                not self.use_upper_case() and not self.use_extra():
+            return "0;" + self.get_template()
+        elif not self.use_digits() and self.use_lower_case() and \
+                not self.use_upper_case() and not self.use_extra():
+            return "1;" + self.get_template()
+        elif not self.use_digits() and not self.use_lower_case() and \
+                self.use_upper_case() and not self.use_extra():
+            return "2;" + self.get_template()
+        elif self.use_digits() and self.use_lower_case() and \
+                not self.use_upper_case() and not self.use_extra():
+            return "3;" + self.get_template()
+        elif not self.use_digits() and self.use_lower_case() and \
+                self.use_upper_case() and not self.use_extra():
+            return "4;" + self.get_template()
+        elif self.use_digits() and self.use_lower_case() and \
+                self.use_upper_case() and not self.use_extra():
+            return "5;" + self.get_template()
+        elif self.use_digits() and self.use_lower_case() and \
+                self.use_upper_case() and self.use_extra():
+            return "6;" + self.get_template()
         else:
             return ""
 
-    def set_reserved(self, reserved):
+    def calculate_template(self):
         """
-        Sets the 'reserved' field
+        Calculates a new template based on the character set configuration and the length.
+        """
+        l = []
+        inserted_lower = False
+        inserted_upper = False
+        inserted_digit = False
+        inserted_extra = False
+        for i in range(self.get_length()):
+            if self.use_lower_case() and not inserted_lower:
+                l.append('a')
+                inserted_lower = True
+            elif self.use_upper_case() and not inserted_upper:
+                l.append('A')
+                inserted_upper = True
+            elif self.use_digits() and not inserted_digit:
+                l.append('n')
+                inserted_digit = True
+            elif self.use_extra() and not inserted_extra:
+                l.append('o')
+                inserted_extra = True
+            else:
+                l.append('x')
+        shuffle(l)
+        self.template = ''.join(l)
 
-        :param reserved: the content of the 'reserved' field
-        :type reserved: str
+    def get_template(self):
         """
-        if reserved != self.reserved:
-            self.synced = False
-        else:
-            return self.reserved
+        Returns the template without digit and semicolon.
+
+        :return: template
+        :rtype: str
+        """
+        if not self.template:
+            self.calculate_template()
+        return self.template
+
+    def set_full_template(self, full_template):
+        """
+        Sets a template from a complete template string with digit and semicolon. This also preferences the template
+        so other settings might get ignored.
+
+        :param full_template: complete template string
+        :type full_template: str
+        """
+        matches = re.compile("([0123456]);([aAnox]+)").match(full_template)
+        if matches and len(matches.groups()) >= 2:
+            complexity = int(matches.group(1))
+            if complexity == 0:
+                self.set_use_digits(True)
+                self.set_use_lower_case(False)
+                self.set_use_upper_case(False)
+                self.set_use_extra(False)
+            elif complexity == 1:
+                self.set_use_digits(False)
+                self.set_use_lower_case(True)
+                self.set_use_upper_case(False)
+                self.set_use_extra(False)
+            elif complexity == 2:
+                self.set_use_digits(False)
+                self.set_use_lower_case(False)
+                self.set_use_upper_case(True)
+                self.set_use_extra(False)
+            elif complexity == 3:
+                self.set_use_digits(True)
+                self.set_use_lower_case(True)
+                self.set_use_upper_case(False)
+                self.set_use_extra(False)
+            elif complexity == 4:
+                self.set_use_digits(False)
+                self.set_use_lower_case(True)
+                self.set_use_upper_case(True)
+                self.set_use_extra(False)
+            elif complexity == 5:
+                self.set_use_digits(True)
+                self.set_use_lower_case(True)
+                self.set_use_upper_case(True)
+                self.set_use_extra(False)
+            elif complexity == 6:
+                self.set_use_digits(True)
+                self.set_use_lower_case(True)
+                self.set_use_upper_case(True)
+                self.set_use_extra(True)
+            self.template = matches.group(2)
 
     def is_synced(self):
         """
@@ -591,8 +729,8 @@ class PasswordSetting:
         domain_object["cDate"] = self.get_creation_date()
         domain_object["mDate"] = self.get_modification_date()
         domain_object["usedCharacters"] = self.get_character_set()
-        if self.get_reserved():
-            domain_object["reserved"] = self.get_reserved()
+        domain_object["extras"] = self.get_extra_character_set()
+        domain_object["passwordTemplate"] = self.get_full_template()
         return domain_object
 
     def load_from_dict(self, loaded_setting):
@@ -622,8 +760,10 @@ class PasswordSetting:
             self.set_modification_date(loaded_setting["mDate"])
         if "usedCharacters" in loaded_setting:
             self.set_custom_character_set(loaded_setting["usedCharacters"])
-        if "reserved" in loaded_setting:
-            self.set_reserved(loaded_setting["reserved"])
+        if "extras" in loaded_setting:
+            self.set_extra_character_set(loaded_setting["extras"])
+        if "passwordTemplate" in loaded_setting:
+            self.set_full_template(loaded_setting["passwordTemplate"])
 
     def ask_for_input(self):
         """

@@ -15,15 +15,11 @@ class Crypter:
     password and salt with PBKDF2 using HMAC with SHA512 and 32768 iterations.
     """
     def __init__(self, key_iv):
-        if len(key_iv) == 32:
+        if len(key_iv) == 48:
             self.key = key_iv[:32]
             self.iv = key_iv[32:]
-        elif len(key_iv) == 32:
-            self.key = key_iv
-            self.iv = b'\xb5\x4f\xcf\xb0\x88\x09\x55\xe5\xbf\x79\xaf\x37\x71\x1c\x28\xb6'
         else:
-            self.key = Crypter.create_key(key_iv, "pepper".encode('utf-8'))
-            self.iv = b'\xb5\x4f\xcf\xb0\x88\x09\x55\xe5\xbf\x79\xaf\x37\x71\x1c\x28\xb6'
+            raise ValueError("Wrong key_iv length.")
 
     @staticmethod
     def create_key(password, salt, iterations=1024):
@@ -33,7 +29,7 @@ class Crypter:
         :param password: this is the kgk
         :type password: bytes
         :param salt: the salt2
-        :param salt: bytes
+        :type salt: bytes
         :param iterations: an iteration count
         :type iterations: int
         :return: a key
@@ -49,7 +45,7 @@ class Crypter:
         :param password: this is the kgk
         :type password: bytes
         :param salt: the salt2
-        :param salt: bytes
+        :type salt: bytes
         :param iterations: an iteration count
         :type iterations: int
         :return: a key

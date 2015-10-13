@@ -53,6 +53,9 @@ class Packer:
         :rtype: bytes
         """
         if type(compressed_data) == bytes:
-            return zlib.decompress(compressed_data[4:])
+            try:
+                return zlib.decompress(compressed_data[4:])
+            except zlib.error:
+                raise ValueError("The compressed data is in a wrong format.")
         else:
             raise TypeError("Please pass bytes to the packer.")

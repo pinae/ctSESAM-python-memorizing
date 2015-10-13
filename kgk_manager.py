@@ -11,17 +11,26 @@ import os
 
 class KgkManager:
     """
-    Pass a preference manager to load and store settings
+    New KgkManagers are uninitialized and need either a new kgk or get one by decrypting an existing one.
     """
-    def __init__(self, preference_manager):
-        if type(preference_manager) != PreferenceManager:
-            raise TypeError
-        self.preference_manager = preference_manager
+    def __init__(self):
+        self.preference_manager = None
         self.kgk = None
         self.iv2 = None
         self.salt2 = None
         self.kgk_crypter = None
         self.salt = None
+
+    def set_preference_manager(self, preference_manager):
+        """
+        Pass a preference manager to load and store settings locally
+
+        :param preference_manager:
+        :type preference_manager: PreferenceManager
+        """
+        if type(preference_manager) != PreferenceManager:
+            raise TypeError
+        self.preference_manager = preference_manager
 
     def get_kgk_crypter_salt(self):
         """
@@ -44,7 +53,8 @@ class KgkManager:
         """
         if type(salt) == bytes:
             self.salt = salt
-            self.preference_manager.store_salt(salt)
+            if self.preference_manager:
+                self.preference_manager.store_salt(salt)
         else:
             raise TypeError("There is no salt to be saved")
 
@@ -59,8 +69,8 @@ class KgkManager:
         :return: a kgk crypter
         :rtype: Crypter
         """
-        self.kgk_crypter = Crypter(Crypter.createIvKey(password, salt))
-        self.store_salt(salt)
+        self.kgk_crypter = Crypter(Crypter.createIvKey(password=password, salt=salt))
+        self.store_salt(salt=salt)
         return self.kgk_crypter
 
     def create_new_kgk(self):
@@ -208,7 +218,8 @@ class KgkManager:
         """
         Stores the local kgk block.
         """
-        self.preference_manager.store_kgk_block(self.get_encrypted_kgk())
+        if self.preference_manager:
+            self.preference_manager.store_kgk_block(self.get_encrypted_kgk())
         if type(self.salt) == bytes:
             self.store_salt(self.salt)
 
