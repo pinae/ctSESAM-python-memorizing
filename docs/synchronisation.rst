@@ -9,10 +9,10 @@ ctSESAM can synchronize your password settings with a ctSESAM-Server_. The exact
 
 Basic communication part is implemented in the ``Sync`` class.
 
-.. automodule:: Sync
+.. automodule:: sync
    :members:
 
 This class is wrapped by a ``SyncManager`` which handles the settings management for the server connection.
 
-.. automodule:: SyncManager
+.. automodule:: sync_manager
    :members:

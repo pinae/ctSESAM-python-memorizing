@@ -5,18 +5,18 @@ Managing settings
 Settings are stored as ``PasswordSetting`` objects.
 
 .. default-domain:: py
-.. automodule:: PasswordSetting
+.. automodule:: password_setting
    :members:
 
 The ``PasswordSettingsManager`` saves and manages the ``PasswordSetting`` objects.
 
-.. automodule:: PasswordSettingsManager
+.. automodule:: password_settings_manager
    :members:
 
 It uses a ``Packer`` to compress data for storage and a ``Crypter`` to encrypt it.
 
-.. automodule:: Packer
+.. automodule:: packer
    :members:
 
-.. automodule:: Crypter
+.. automodule:: crypter
    :members:

@@ -18,6 +18,7 @@ Contents:
    passwordGeneration
    settings
    synchronisation
+   tools
 
 
 
