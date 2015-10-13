@@ -15,11 +15,11 @@ class KgkManager:
     """
     def __init__(self):
         self.preference_manager = None
-        self.kgk = None
+        self.kgk = b''
         self.iv2 = None
         self.salt2 = None
         self.kgk_crypter = None
-        self.salt = None
+        self.salt = b''
 
     def set_preference_manager(self, preference_manager):
         """
@@ -220,8 +220,10 @@ class KgkManager:
         """
         if self.preference_manager:
             self.preference_manager.store_kgk_block(self.get_encrypted_kgk())
-        if type(self.salt) == bytes:
+        if len(self.salt) == 32:
             self.store_salt(self.salt)
+        else:
+            raise ValueError("The salt has to be 32 bytes.")
 
     def reset(self):
         """
