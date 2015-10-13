@@ -50,8 +50,6 @@ class SyncManager:
         :param bytes data: packed json data of sync settings
         """
         settings_dict = json.loads(str(Packer.decompress(data), encoding='utf-8'))
-        print("Sync Settings:")
-        print(settings_dict)
         if "server-address" in settings_dict and \
            "username" in settings_dict and \
            "password" in settings_dict and \

@@ -112,7 +112,6 @@ class PasswordSettingsManager:
         self.load_local_settings(kgk_manager)
         if not no_sync:
             pull_successful, data = self.sync_manager.pull()
-            print(pull_successful)
             if pull_successful and len(data) > 0:
                 remote_kgk_manager = KgkManager()
                 remote_kgk_manager.update_from_blob(password.encode('utf-8'), b64decode(data))

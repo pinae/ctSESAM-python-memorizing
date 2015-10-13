@@ -39,11 +39,8 @@ class Sync:
                                 headers=self.headers,
                                 verify=os.path.join(os.path.dirname(os.path.realpath(__file__)),
                                                     self.certificate_filename))
-        print(request.status_code)
         if request.status_code == requests.codes.ok:
             received_data = json.loads(request.text)
-            print("Recieved data:")
-            print(received_data)
             if 'status' in received_data and received_data['status']:
                 if 'result' in received_data:
                     return True, received_data['result']
