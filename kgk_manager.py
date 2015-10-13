@@ -192,7 +192,7 @@ class KgkManager:
         :rtype: bytes
         """
         self.salt = Crypter.createSalt()
-        self.preference_manager.store_salt(self.salt)
+        self.store_salt(self.salt)
         if kgk_crypter:
             self.kgk_crypter = kgk_crypter
         kgk_block = self.get_fresh_encrypted_kgk()

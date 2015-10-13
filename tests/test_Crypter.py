@@ -16,16 +16,17 @@ class TestCrypter(unittest.TestCase):
         crypter = Crypter(Crypter.createIvKey(password.encode('utf-8'), "pepper".encode('utf-8'), iterations=3))
         ciphertext = crypter.encrypt(message)
         self.assertEqual(
-            b'xKadEb1E+adRFKBvEoA3IRuyvYgAxCrleo2vanisBOjoQQI688Hq900K/nIE1o5EnlJ+bOtb6a9u7D3QHtjDk4VP7lZ8exhQD5U' +
-            b't7GaZNer1pI66dqae2pL5XR3ulFrpc1mR+8QYPE3Tyu4fbNmEdM5oS6qO1KKQ+6aeEi9arVw8LKIsV2YzsU6lcuCUgoWWJarErf' +
-            b'MZ50stwtSBM7uvMRFB9AQ3761A/B8HXJoGJ10kr+5ghh2v1vldp3s9SVcaKyl3GLznaLB3b6dfj55wPA==',
+            b'EFEgY5bexGnwjGSUQKK35TPD7fAjG66REq5m9N1eyFHrZQwzv+aLc7bVmJ9FzCyxbCnbyUnzDKiY505br' +
+            b'oEb+KO41XKW668xJzh/JvOK0Cu/+bc4/zSFHZM6JsTYEVDIXgR39ZlypeB34jDVI2544w1ey+DmTWbe8n' +
+            b'UbagjnmRkok6kOAq8Avsf9BVJMw3BnSn/4cCC+gOxOJY5fp4DecNDQnp0HyyUz2VMMh/JUYILS5+67fXq' +
+            b'29CbIQ1DOTqDfqRPA62nkRVPY83cKIe/UXw==',
             b64encode(ciphertext))
 
     def test_decrypt(self):
-        ciphertext = b'xKadEb1E+adRFKBvEoA3IRuyvYgAxCrleo2vanisBOjoQQI688Hq900K/nIE1o5EnlJ+bOtb6a9u7D3QHtjDk4VP7l' + \
-                     b'Z8exhQD5Ut7GaZNer1pI66dqae2pL5XR3ulFrpc1mR+8QYPE3Tyu4fbNmEdM5oS6qO1KKQ+6aeEi9arVw8LKIsV2Yz' + \
-                     b'sU6lcuCUgoWWJarErfMZ50stwtSBM7uvMRFB9AQ3761A/B8HXJoGJ10kr+5ghh2v1vldp3s9SVcaKyl3GLznaLB3b6' + \
-                     b'dfj55wPA=='
+        ciphertext = b'EFEgY5bexGnwjGSUQKK35TPD7fAjG66REq5m9N1eyFHrZQwzv+aLc7bVmJ9FzCyxbCnbyUnzDKiY505br' + \
+                     b'oEb+KO41XKW668xJzh/JvOK0Cu/+bc4/zSFHZM6JsTYEVDIXgR39ZlypeB34jDVI2544w1ey+DmTWbe8n' + \
+                     b'UbagjnmRkok6kOAq8Avsf9BVJMw3BnSn/4cCC+gOxOJY5fp4DecNDQnp0HyyUz2VMMh/JUYILS5+67fXq' + \
+                     b'29CbIQ1DOTqDfqRPA62nkRVPY83cKIe/UXw=='
         self.assertEqual(0, len(b64decode(ciphertext)) % 16)
         password = "secret"
         crypter = Crypter(Crypter.createIvKey(password.encode('utf-8'), "pepper".encode('utf-8'), iterations=3))

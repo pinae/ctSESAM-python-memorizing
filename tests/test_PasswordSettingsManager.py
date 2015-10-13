@@ -18,6 +18,11 @@ class MockSyncManager(object):
     """
     We do not really want to sync.
     """
+    def __init__(self, kgk):
+        self.kgk_manager = KgkManager()
+        self.kgk_manager.set_preference_manager(PreferenceManager(os.path.expanduser('~/.ctSESAM_test_extra.pws')))
+        self.kgk_manager.kgk = kgk
+
     def pull(self):
         """
         Returns some mock data tor the sync test.
@@ -56,10 +61,8 @@ class MockSyncManager(object):
             }
         }
         salt = os.urandom(32)
-        kgk_manager = KgkManager(PreferenceManager(os.path.expanduser('~/.ctSESAM_test_extra.pws')))
-        kgk_manager.create_new_kgk()
-        kgk_block = kgk_manager.create_and_save_new_kgk_block(kgk_manager.get_kgk_crypter(b'xyz', salt))
-        settings_crypter = PasswordSettingsManager.get_settings_crypter(kgk_manager)
+        kgk_block = self.kgk_manager.create_and_save_new_kgk_block(self.kgk_manager.get_kgk_crypter(b'xyz', salt))
+        settings_crypter = PasswordSettingsManager.get_settings_crypter(self.kgk_manager)
         return True, str(b64encode(b'\x01' + salt + kgk_block + settings_crypter.encrypt(
             Packer.compress(json.dumps(remote_data).encode('utf-8')))), encoding='utf-8')
 
@@ -69,6 +72,13 @@ class MockSyncManager(object):
         :rtype: bytes
         """
         return b''
+
+    def has_settings(self):
+        """
+        :return:
+        :rtype: bool
+        """
+        return True
 
 
 class TestPasswordSettingsManager(unittest.TestCase):
@@ -99,7 +109,8 @@ class TestPasswordSettingsManager(unittest.TestCase):
         new_setting = PasswordSetting('hugo.com')
         new_setting.set_length(12)
         self.manager.set_setting(new_setting)
-        kgk_manager = KgkManager(self.preference_manager)
+        kgk_manager = KgkManager()
+        kgk_manager.set_preference_manager(self.preference_manager)
         kgk_manager.create_new_kgk()
         salt = os.urandom(32)
         kgk_manager.create_and_save_new_kgk_block(Crypter(Crypter.createIvKey(b'xyz', salt, iterations=3)))
@@ -138,7 +149,8 @@ class TestPasswordSettingsManager(unittest.TestCase):
         }
         salt = os.urandom(32)
         data = json.dumps(settings).encode('utf-8')
-        kgk_manager = KgkManager(self.preference_manager)
+        kgk_manager = KgkManager()
+        kgk_manager.set_preference_manager(self.preference_manager)
         kgk_manager.create_new_kgk()
         kgk_block = kgk_manager.create_and_save_new_kgk_block(Crypter(Crypter.createIvKey(b'xyz', salt, iterations=3)))
         crypter = PasswordSettingsManager.get_settings_crypter(kgk_manager)
@@ -175,6 +187,7 @@ class TestPasswordSettingsManager(unittest.TestCase):
             'settings': {
                 'unit.test': {
                     'domain': 'unit.test',
+                    'extras': '#!"§$%&/()[]{}=-_+*<>;:.',
                     'length': 11,
                     'iterations': 5000,
                     'notes': 'Nice note!',
@@ -186,6 +199,7 @@ class TestPasswordSettingsManager(unittest.TestCase):
                 },
                 'some.domain': {
                     'domain': 'some.domain',
+                    'extras': '#!"§$%&/()[]{}=-_+*<>;:.',
                     'length': 4,
                     'iterations': 4096,
                     'salt': 'cGVwcGVy',
@@ -199,7 +213,8 @@ class TestPasswordSettingsManager(unittest.TestCase):
         salt = os.urandom(32)
         f = open(os.path.expanduser('~/.ctSESAM_test.pws'), 'bw')
         data = json.dumps(settings).encode('utf-8')
-        kgk_manager = KgkManager(self.preference_manager)
+        kgk_manager = KgkManager()
+        kgk_manager.set_preference_manager(self.preference_manager)
         kgk_manager.create_new_kgk()
         kgk_block = kgk_manager.create_and_save_new_kgk_block(Crypter(Crypter.createIvKey(b'xyz', salt, iterations=3)))
         crypter = PasswordSettingsManager.get_settings_crypter(kgk_manager)
@@ -221,6 +236,7 @@ class TestPasswordSettingsManager(unittest.TestCase):
             'settings': {
                 'unit.test': {
                     'domain': 'unit.test',
+                    'extras': '#!"§$%&/()[]{}=-_+*<>;:.',
                     'length': 11,
                     'iterations': 5000,
                     'notes': 'Nice note!',
@@ -232,6 +248,7 @@ class TestPasswordSettingsManager(unittest.TestCase):
                 },
                 'some.domain': {
                     'domain': 'some.domain',
+                    'extras': '#!"§$%&/()[]{}=-_+*<>;:.',
                     'length': 4,
                     'iterations': 4096,
                     'salt': 'cGVwcGVy',
@@ -243,7 +260,8 @@ class TestPasswordSettingsManager(unittest.TestCase):
             'synced': []
         }
         salt = os.urandom(32)
-        kgk_manager = KgkManager(self.preference_manager)
+        kgk_manager = KgkManager()
+        kgk_manager.set_preference_manager(self.preference_manager)
         kgk_manager.create_new_kgk()
         kgk_block = kgk_manager.create_and_save_new_kgk_block(Crypter(Crypter.createIvKey(b'xyz', salt, iterations=3)))
         crypter = PasswordSettingsManager.get_settings_crypter(kgk_manager)
@@ -257,7 +275,8 @@ class TestPasswordSettingsManager(unittest.TestCase):
         self.assertEqual(b'\x01', data[:1])
         salt = data[1:33]
         kgk_crypter = Crypter(Crypter.createIvKey(b'xyz', salt, iterations=3))
-        kgk_manager2 = KgkManager(self.preference_manager)
+        kgk_manager2 = KgkManager()
+        kgk_manager2.set_preference_manager(self.preference_manager)
         kgk_manager2.decrypt_kgk(data[33:145], kgk_crypter)
         settings_crypter = PasswordSettingsManager.get_settings_crypter(kgk_manager2)
         self.assertEqual(
@@ -291,7 +310,8 @@ class TestPasswordSettingsManager(unittest.TestCase):
             'synced': []
         }
         salt = os.urandom(32)
-        kgk_manager = KgkManager(self.preference_manager)
+        kgk_manager = KgkManager()
+        kgk_manager.set_preference_manager(self.preference_manager)
         kgk_manager.create_new_kgk()
         kgk_block = kgk_manager.create_and_save_new_kgk_block(
             Crypter(Crypter.createIvKey('xyz'.encode('utf-8'), salt)))
@@ -301,7 +321,7 @@ class TestPasswordSettingsManager(unittest.TestCase):
                 crypter.encrypt(struct.pack('!I', 0) + Packer.compress(json.dumps(settings).encode('utf-8'))))
         f.close()
         self.preference_manager.read_file()
-        self.manager.sync_manager = MockSyncManager()
+        self.manager.sync_manager = MockSyncManager(kgk_manager.get_kgk())
         self.manager.load_settings(kgk_manager, 'xyz')
         self.assertIn('unit.test', self.manager.get_domain_list())
         self.assertIn('some.domain', self.manager.get_domain_list())

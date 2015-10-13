@@ -56,11 +56,8 @@ class TestPasswordSetting(unittest.TestCase):
         self.assertEqual("0", s.get_character_set()[5])
 
     def test_salt(self):
-        expected = 'pepper'.encode('utf-8')
         s = PasswordSetting("unit.test")
-        self.assertEqual(len(expected), len(s.get_salt()))
-        for i in range(len(expected)):
-            self.assertEqual(expected[i], s.get_salt()[i])
+        self.assertEqual(32, len(s.get_salt()))
         s.set_salt("somethingelse".encode('utf-8'))
         expected = "somethingelse".encode('utf-8')
         self.assertEqual(len(expected), len(s.get_salt()))
