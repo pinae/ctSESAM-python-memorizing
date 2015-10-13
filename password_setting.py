@@ -37,6 +37,7 @@ class PasswordSetting:
         self.extra_characters = DEFAULT_CHARACTER_SET_EXTRA
         self.reserved = None
         self.template = None
+        self.force_character_classes = False
         self.synced = False
 
     def get_domain(self):
@@ -612,16 +613,16 @@ class PasswordSetting:
         inserted_digit = False
         inserted_extra = False
         for i in range(self.get_length()):
-            if self.use_lower_case() and not inserted_lower:
+            if self.force_character_classes and self.use_lower_case() and not inserted_lower:
                 l.append('a')
                 inserted_lower = True
-            elif self.use_upper_case() and not inserted_upper:
+            elif self.force_character_classes and self.use_upper_case() and not inserted_upper:
                 l.append('A')
                 inserted_upper = True
-            elif self.use_digits() and not inserted_digit:
+            elif self.force_character_classes and self.use_digits() and not inserted_digit:
                 l.append('n')
                 inserted_digit = True
-            elif self.use_extra() and not inserted_extra:
+            elif self.force_character_classes and self.use_extra() and not inserted_extra:
                 l.append('o')
                 inserted_extra = True
             else:
@@ -650,6 +651,7 @@ class PasswordSetting:
         """
         matches = re.compile("([0123456]);([aAnox]+)").match(full_template)
         if matches and len(matches.groups()) >= 2:
+            self.force_character_classes = True
             complexity = int(matches.group(1))
             if complexity == 0:
                 self.set_use_digits(True)
@@ -730,7 +732,8 @@ class PasswordSetting:
         domain_object["mDate"] = self.get_modification_date()
         domain_object["usedCharacters"] = self.get_character_set()
         domain_object["extras"] = self.get_extra_character_set()
-        domain_object["passwordTemplate"] = self.get_full_template()
+        if self.force_character_classes:
+            domain_object["passwordTemplate"] = self.get_full_template()
         return domain_object
 
     def load_from_dict(self, loaded_setting):
