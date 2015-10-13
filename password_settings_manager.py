@@ -111,15 +111,16 @@ class PasswordSettingsManager:
         """
         self.load_local_settings(kgk_manager)
         if not no_sync:
-            pull_successful, data = self.sync_manager.pull()
-            if pull_successful and len(data) > 0:
-                remote_kgk_manager = KgkManager()
-                remote_kgk_manager.update_from_blob(password.encode('utf-8'), b64decode(data))
-                if remote_kgk_manager.has_kgk() and kgk_manager.get_kgk() != remote_kgk_manager.get_kgk():
-                    raise ValueError("KGK mismatch! This are not your settings!")
-                self.update_from_export_data(remote_kgk_manager, b64decode(data))
-            else:
-                print("Sync failed: No connection to the server.")
+            if self.sync_manager.has_settings():
+                pull_successful, data = self.sync_manager.pull()
+                if pull_successful and len(data) > 0:
+                    remote_kgk_manager = KgkManager()
+                    remote_kgk_manager.update_from_blob(password.encode('utf-8'), b64decode(data))
+                    if remote_kgk_manager.has_kgk() and kgk_manager.get_kgk() != remote_kgk_manager.get_kgk():
+                        raise ValueError("KGK mismatch! This are not your settings!")
+                    self.update_from_export_data(remote_kgk_manager, b64decode(data))
+                else:
+                    print("Sync failed: No connection to the server.")
 
     def get_setting(self, domain):
         """
