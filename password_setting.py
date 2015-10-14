@@ -8,6 +8,7 @@ from datetime import datetime
 import getpass
 import string
 import re
+import binascii
 from base64 import b64encode, b64decode
 from random import shuffle
 from crypter import Crypter
@@ -35,10 +36,43 @@ class PasswordSetting:
         self.modification_date = self.creation_date
         self.used_characters = self.get_default_character_set()
         self.extra_characters = DEFAULT_CHARACTER_SET_EXTRA
-        self.reserved = None
         self.template = None
         self.force_character_classes = False
         self.synced = False
+
+    def __str__(self):
+        output = "<" + self.domain + ": ("
+        if self.username:
+            output += "username: " + str(self.username) + ", "
+        if self.legacy_password:
+            output += "legacy password: " + str(self.legacy_password) + ", "
+        if self.notes:
+            output += "notes: " + str(self.notes) + ", "
+        output += "iterations: " + str(self.iterations) + ", "
+        output += "salt: " + str(binascii.hexlify(self.salt)) + ", "
+        if self.force_character_classes and self.template:
+            output += "template: " + str(self.template) + ", "
+        else:
+            output += "length: " + str(self.length) + ", "
+        output += "modification date: " + self.get_modification_date() + ", "
+        output += "creation date: " + self.get_creation_date() + ", "
+        output += "used characters: \"" + self.used_characters + "\", "
+        if self.extra_characters:
+            output += "extra characters: \"" + self.extra_characters + "\", "
+        if self.use_lower_case():
+            output += "using lower case characters, "
+        if self.use_upper_case():
+            output += "using upper case characters, "
+        if self.use_digits():
+            output += "using digits, "
+        if self.use_extra():
+            output += "using special characters, "
+        if self.synced:
+            output += "synced"
+        else:
+            output += "not synced"
+        output += ")>"
+        return output
 
     def get_domain(self):
         """
