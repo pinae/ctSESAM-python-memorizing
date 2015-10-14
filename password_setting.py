@@ -579,27 +579,9 @@ class PasswordSetting:
         :return: template string
         :rtype: str
         """
-        if self.use_digits() and not self.use_lower_case() and \
-                not self.use_upper_case() and not self.use_extra():
-            return "0;" + self.get_template()
-        elif not self.use_digits() and self.use_lower_case() and \
-                not self.use_upper_case() and not self.use_extra():
-            return "1;" + self.get_template()
-        elif not self.use_digits() and not self.use_lower_case() and \
-                self.use_upper_case() and not self.use_extra():
-            return "2;" + self.get_template()
-        elif self.use_digits() and self.use_lower_case() and \
-                not self.use_upper_case() and not self.use_extra():
-            return "3;" + self.get_template()
-        elif not self.use_digits() and self.use_lower_case() and \
-                self.use_upper_case() and not self.use_extra():
-            return "4;" + self.get_template()
-        elif self.use_digits() and self.use_lower_case() and \
-                self.use_upper_case() and not self.use_extra():
-            return "5;" + self.get_template()
-        elif self.use_digits() and self.use_lower_case() and \
-                self.use_upper_case() and self.use_extra():
-            return "6;" + self.get_template()
+        complexity = self.get_complexity()
+        if complexity >= 0:
+            return str(complexity) + ";" + self.get_template()
         else:
             return ""
 
@@ -652,7 +634,17 @@ class PasswordSetting:
         matches = re.compile("([0123456]);([aAnox]+)").match(full_template)
         if matches and len(matches.groups()) >= 2:
             self.force_character_classes = True
-            complexity = int(matches.group(1))
+            self.set_complexity(int(matches.group(1)))
+            self.template = matches.group(2)
+
+    def set_complexity(self, complexity):
+        """
+        Sets the complexity by activating the appropriate character groups.
+
+        :param complexity: 0, 1, 2, 3, 4, 5 or 6
+        :type complexity: int
+        """
+        if 0 <= complexity <= 6:
             if complexity == 0:
                 self.set_use_digits(True)
                 self.set_use_lower_case(False)
@@ -688,7 +680,40 @@ class PasswordSetting:
                 self.set_use_lower_case(True)
                 self.set_use_upper_case(True)
                 self.set_use_extra(True)
-            self.template = matches.group(2)
+        else:
+            ValueError("The complexity must be in the range 0 to 6.")
+
+    def get_complexity(self):
+        """
+        Returns the complexity as a digit from 0 to 6. If the character selection does not match a complexity
+        group -1 is returned.
+
+        :return: a digit from 0 to 6 or -1
+        :rtype: int
+        """
+        if self.use_digits() and not self.use_lower_case() and \
+                not self.use_upper_case() and not self.use_extra():
+            return 0
+        elif not self.use_digits() and self.use_lower_case() and \
+                not self.use_upper_case() and not self.use_extra():
+            return 1
+        elif not self.use_digits() and not self.use_lower_case() and \
+                self.use_upper_case() and not self.use_extra():
+            return 2
+        elif self.use_digits() and self.use_lower_case() and \
+                not self.use_upper_case() and not self.use_extra():
+            return 3
+        elif not self.use_digits() and self.use_lower_case() and \
+                self.use_upper_case() and not self.use_extra():
+            return 4
+        elif self.use_digits() and self.use_lower_case() and \
+                self.use_upper_case() and not self.use_extra():
+            return 5
+        elif self.use_digits() and self.use_lower_case() and \
+                self.use_upper_case() and self.use_extra():
+            return 6
+        else:
+            return -1
 
     def is_synced(self):
         """
