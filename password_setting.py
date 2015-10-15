@@ -157,6 +157,32 @@ class PasswordSetting:
             self.synced = False
         self.legacy_password = legacy_password
 
+    def set_use(self, use, character_set):
+        """
+        Generic method to add or remove characters from the character set.
+
+        :param use: should the characters be used?
+        :type use: bool
+        :param character_set: character set which should be inserted or removed
+        :type character_set: str
+        """
+        s = set(self.used_characters)
+        if use:
+            for c in character_set:
+                s.add(c)
+        else:
+            for c in character_set:
+                if c in s:
+                    s.remove(c)
+        new_character_set = ""
+        for c in DEFAULT_CHARACTER_SET_LOWER_CASE + DEFAULT_CHARACTER_SET_UPPER_CASE + \
+                DEFAULT_CHARACTER_SET_DIGITS + DEFAULT_CHARACTER_SET_EXTRA:
+            if c in s:
+                new_character_set += c
+                s.remove(c)
+        new_character_set += "".join(s)
+        self.used_characters = new_character_set
+
     def use_letters(self):
         """
         Returns true if the character set contains the default set of letters at the default position and with the
@@ -177,15 +203,7 @@ class PasswordSetting:
         :type use_letters: bool
         """
         old_character_set = self.used_characters
-        pos = 0
-        while pos < len(self.used_characters):
-            if self.used_characters[pos] in DEFAULT_CHARACTER_SET_LOWER_CASE + DEFAULT_CHARACTER_SET_UPPER_CASE:
-                self.used_characters = self.used_characters[:pos] + self.used_characters[pos + 1:]
-            else:
-                pos += 1
-        if use_letters:
-            self.used_characters = DEFAULT_CHARACTER_SET_LOWER_CASE + DEFAULT_CHARACTER_SET_UPPER_CASE + \
-                self.used_characters
+        self.set_use(use_letters, DEFAULT_CHARACTER_SET_LOWER_CASE + DEFAULT_CHARACTER_SET_UPPER_CASE)
         if old_character_set != self.used_characters:
             self.synced = False
 
@@ -209,14 +227,7 @@ class PasswordSetting:
         :type use_lower_case: bool
         """
         old_character_set = self.used_characters
-        pos = 0
-        while pos < len(self.used_characters):
-            if self.used_characters[pos] in DEFAULT_CHARACTER_SET_LOWER_CASE:
-                self.used_characters = self.used_characters[:pos] + self.used_characters[pos + 1:]
-            else:
-                pos += 1
-        if use_lower_case:
-            self.used_characters = DEFAULT_CHARACTER_SET_LOWER_CASE + self.used_characters
+        self.set_use(use_lower_case, DEFAULT_CHARACTER_SET_LOWER_CASE)
         if old_character_set != self.used_characters:
             self.synced = False
 
@@ -243,15 +254,7 @@ class PasswordSetting:
         :type use_upper_case: bool
         """
         old_character_set = self.used_characters
-        pos = 0
-        while pos < len(self.used_characters):
-            if self.used_characters[pos] in DEFAULT_CHARACTER_SET_UPPER_CASE:
-                self.used_characters = self.used_characters[:pos] + self.used_characters[pos + 1:]
-            else:
-                pos += 1
-        if use_upper_case:
-            self.used_characters = self.used_characters[:len(DEFAULT_CHARACTER_SET_LOWER_CASE)] + \
-                DEFAULT_CHARACTER_SET_LOWER_CASE + self.used_characters[len(DEFAULT_CHARACTER_SET_LOWER_CASE):]
+        self.set_use(use_upper_case, DEFAULT_CHARACTER_SET_UPPER_CASE)
         if old_character_set != self.used_characters:
             self.synced = False
 
@@ -276,17 +279,7 @@ class PasswordSetting:
         :type use_digits: bool
         """
         old_character_set = self.used_characters
-        pos = 0
-        while pos < len(self.used_characters):
-            if self.used_characters[pos] in DEFAULT_CHARACTER_SET_DIGITS:
-                self.used_characters = self.used_characters[:pos] + self.used_characters[pos + 1:]
-            else:
-                pos += 1
-        if use_digits:
-            self.used_characters = self.used_characters[
-                :len(DEFAULT_CHARACTER_SET_LOWER_CASE + DEFAULT_CHARACTER_SET_UPPER_CASE)] + \
-                DEFAULT_CHARACTER_SET_DIGITS + self.used_characters[
-                    len(DEFAULT_CHARACTER_SET_LOWER_CASE + DEFAULT_CHARACTER_SET_UPPER_CASE):]
+        self.set_use(use_digits, DEFAULT_CHARACTER_SET_DIGITS)
         if old_character_set != self.used_characters:
             self.synced = False
 
@@ -312,15 +305,24 @@ class PasswordSetting:
         :type use_extra: bool
         """
         old_character_set = self.used_characters
-        pos = 0
-        while pos < len(self.used_characters):
-            if self.used_characters[pos] in DEFAULT_CHARACTER_SET_EXTRA:
-                self.used_characters = self.used_characters[:pos] + self.used_characters[pos + 1:]
-            else:
-                pos += 1
+        s = set(self.used_characters)
         if use_extra:
-            self.used_characters += DEFAULT_CHARACTER_SET_EXTRA
-        if old_character_set != self.used_characters:
+            for c in DEFAULT_CHARACTER_SET_EXTRA:
+                s.add(c)
+        else:
+            for c in list(s):
+                if c not in DEFAULT_CHARACTER_SET_LOWER_CASE + DEFAULT_CHARACTER_SET_UPPER_CASE + \
+                        DEFAULT_CHARACTER_SET_DIGITS:
+                    s.remove(c)
+        new_character_set = ""
+        for c in DEFAULT_CHARACTER_SET_LOWER_CASE + DEFAULT_CHARACTER_SET_UPPER_CASE + \
+                DEFAULT_CHARACTER_SET_DIGITS + DEFAULT_CHARACTER_SET_EXTRA:
+            if c in s:
+                new_character_set += c
+                s.remove(c)
+        new_character_set += "".join(s)
+        self.used_characters = new_character_set
+        if old_character_set != new_character_set:
             self.synced = False
 
     def use_custom_character_set(self):
