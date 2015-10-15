@@ -24,7 +24,7 @@ class TestPasswordSetting(unittest.TestCase):
         s = PasswordSetting("unit.test")
         self.assertFalse(s.use_custom_character_set())
         self.assertEqual("abcdefghijklmnopqrstuvwxyz" +
-                         "ABCDEFGHJKLMNPQRTUVWXYZ" +
+                         "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
                          "0123456789" +
                          "#!\"§$%&/()[]{}=-_+*<>;:.", s.get_character_set())
         s.set_custom_character_set("&=Oo0wWsS$#uUvVzZ")
@@ -32,12 +32,12 @@ class TestPasswordSetting(unittest.TestCase):
         self.assertEqual("&=Oo0wWsS$#uUvVzZ", s.get_character_set())
         s.set_custom_character_set(
             "abcdefghijklmnopqrstuvwxyz" +
-            "ABCDEFGHJKLMNPQRTUVWXYZ" +
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
             "0123456789" +
             "#!\"§$%&/()[]{}=-_+*<>;:.")
         self.assertFalse(s.use_custom_character_set())
         self.assertEqual("abcdefghijklmnopqrstuvwxyz" +
-                         "ABCDEFGHJKLMNPQRTUVWXYZ" +
+                         "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
                          "0123456789" +
                          "#!\"§$%&/()[]{}=-_+*<>;:.", s.get_character_set())
         s.set_use_letters(False)
@@ -45,7 +45,7 @@ class TestPasswordSetting(unittest.TestCase):
         s.set_use_letters(True)
         s.set_use_digits(False)
         s.set_use_extra(False)
-        self.assertEqual("abcdefghijklmnopqrstuvwxyzABCDEFGHJKLMNPQRTUVWXYZ", s.get_character_set())
+        self.assertEqual("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ", s.get_character_set())
 
     def test_get_character_set(self):
         s = PasswordSetting("unit.test")
@@ -136,6 +136,24 @@ class TestPasswordSetting(unittest.TestCase):
             self.assertEqual(expected_salt[i], s.get_salt()[i])
         self.assertEquals("2001-01-01T02:14:12", s.get_creation_date())
         self.assertEquals("2005-01-01T01:14:12", s.get_modification_date())
+
+    def test_set_use_digits(self):
+        s = PasswordSetting("unit.test")
+        s.set_custom_character_set("abc2")
+        s.set_use_digits(False)
+        self.assertEqual("abc", s.get_character_set())
+        s.set_custom_character_set("abc2")
+        s.set_use_digits(True)
+        self.assertEqual("abc0123456789", s.get_character_set())
+
+    def test_set_use_lower_case(self):
+        s = PasswordSetting("unit.test")
+        s.set_custom_character_set("Eabc2")
+        s.set_use_lower_case(False)
+        self.assertEqual("E2", s.get_character_set())
+        s.set_custom_character_set("Eabc2")
+        s.set_use_lower_case(True)
+        self.assertEqual("abcdefghijklmnopqrstuvwxyzE2", s.get_character_set())
 
 
 if __name__ == '__main__':

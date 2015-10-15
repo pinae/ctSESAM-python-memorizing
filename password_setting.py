@@ -13,8 +13,8 @@ from base64 import b64encode, b64decode
 from random import shuffle
 from crypter import Crypter
 
-DEFAULT_CHARACTER_SET_LOWER_CASE = "abcdefghijklmnopqrstuvwxyz"
-DEFAULT_CHARACTER_SET_UPPER_CASE = "ABCDEFGHJKLMNPQRTUVWXYZ"
+DEFAULT_CHARACTER_SET_LOWER_CASE = string.ascii_lowercase
+DEFAULT_CHARACTER_SET_UPPER_CASE = string.ascii_uppercase
 DEFAULT_CHARACTER_SET_DIGITS = string.digits
 DEFAULT_CHARACTER_SET_EXTRA = '#!"§$%&/()[]{}=-_+*<>;:.'
 
