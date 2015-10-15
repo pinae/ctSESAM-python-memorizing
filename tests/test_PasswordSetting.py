@@ -173,6 +173,14 @@ class TestPasswordSetting(unittest.TestCase):
         s.set_use_extra(True)
         self.assertEqual("abcE23#!\"§$%&/()[]{}=-_+*<>;:.^", s.get_character_set())
 
+    def test_change_length(self):
+        s = PasswordSetting("unit.test")
+        s.set_full_template("1;xxxaxxxxxxx")
+        self.assertEqual(11, s.get_length())
+        s.set_length(16)
+        self.assertEqual(16, s.get_length())
+        self.assertEqual(16, len(s.get_template()))
+
 
 if __name__ == '__main__':
     unittest.main()

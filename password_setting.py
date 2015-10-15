@@ -205,6 +205,7 @@ class PasswordSetting:
         old_character_set = self.used_characters
         self.set_use(use_letters, DEFAULT_CHARACTER_SET_LOWER_CASE + DEFAULT_CHARACTER_SET_UPPER_CASE)
         if old_character_set != self.used_characters:
+            self.calculate_template()
             self.synced = False
 
     def use_lower_case(self):
@@ -229,6 +230,7 @@ class PasswordSetting:
         old_character_set = self.used_characters
         self.set_use(use_lower_case, DEFAULT_CHARACTER_SET_LOWER_CASE)
         if old_character_set != self.used_characters:
+            self.calculate_template()
             self.synced = False
 
     def use_upper_case(self):
@@ -256,6 +258,7 @@ class PasswordSetting:
         old_character_set = self.used_characters
         self.set_use(use_upper_case, DEFAULT_CHARACTER_SET_UPPER_CASE)
         if old_character_set != self.used_characters:
+            self.calculate_template()
             self.synced = False
 
     def use_digits(self):
@@ -281,6 +284,7 @@ class PasswordSetting:
         old_character_set = self.used_characters
         self.set_use(use_digits, DEFAULT_CHARACTER_SET_DIGITS)
         if old_character_set != self.used_characters:
+            self.calculate_template()
             self.synced = False
 
     def use_extra(self):
@@ -323,6 +327,7 @@ class PasswordSetting:
         new_character_set += "".join(s)
         self.used_characters = new_character_set
         if old_character_set != new_character_set:
+            self.calculate_template()
             self.synced = False
 
     def use_custom_character_set(self):
@@ -463,8 +468,9 @@ class PasswordSetting:
         :type length: int
         """
         if self.length != length:
+            self.length = length
+            self.calculate_template()
             self.synced = False
-        self.length = length
 
     def get_iterations(self):
         """
@@ -669,9 +675,11 @@ class PasswordSetting:
         """
         matches = re.compile("([0123456]);([aAnox]+)").match(full_template)
         if matches and len(matches.groups()) >= 2:
-            self.force_character_classes = True
             self.set_complexity(int(matches.group(1)))
             self.template = matches.group(2)
+            self.force_character_classes = 'a' in self.template or 'A' in self.template or \
+                                           'n' in self.template or 'o' in self.template
+            self.length = len(self.template)
 
     def set_complexity(self, complexity):
         """
