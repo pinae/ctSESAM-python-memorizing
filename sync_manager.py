@@ -85,6 +85,33 @@ class SyncManager:
         self.certificate_file.seek(0)
         self.create_sync()
 
+    def set_server_address(self, url):
+        """
+        Sets the url without ajax folder and php file names but with https://
+
+        :param url: the url
+        :type url: str
+        """
+        self.server_address = url
+
+    def set_username(self, username):
+        """
+        Sets the username.
+
+        :param username: the username
+        :type username: str
+        """
+        self.username = username
+
+    def set_password(self, password):
+        """
+        Sets the password.
+
+        :param password: the password
+        :type password: str
+        """
+        self.password = password
+
     def create_sync(self):
         """
         creates a sync object.
