@@ -112,6 +112,20 @@ class SyncManager:
         """
         self.password = password
 
+    def set_certificate(self, certificate):
+        """
+        Sets the certificate from a string in PEM format.
+
+        :param certificate: certificate in PEM format
+        :type certificate: str
+        """
+        self.certificate = certificate
+        if self.certificate_file:
+            self.certificate_file.close()
+        self.certificate_file = NamedTemporaryFile()
+        self.certificate_file.write(self.certificate.encode('utf-8'))
+        self.certificate_file.seek(0)
+
     def create_sync(self):
         """
         creates a sync object.
