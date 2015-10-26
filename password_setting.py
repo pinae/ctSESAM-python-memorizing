@@ -451,6 +451,12 @@ class PasswordSetting:
         else:
             raise TypeError("The salt should be bytes.")
 
+    def new_salt(self):
+        """
+        Creates a new salt for the setting.
+        """
+        self.salt = Crypter.createSalt()
+
     def get_length(self):
         """
         Returns the desired password length.
