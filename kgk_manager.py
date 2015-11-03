@@ -6,6 +6,7 @@ The KGK manager stores the kgk and manages storage and encryption of kgk blocks.
 
 from preference_manager import PreferenceManager
 from crypter import Crypter
+from binascii import hexlify
 import os
 
 
@@ -20,6 +21,10 @@ class KgkManager:
         self.salt2 = None
         self.kgk_crypter = None
         self.salt = b''
+
+    def __str__(self):
+        return "<KGK: " + hexlify(self.kgk) + ", salt: " + hexlify(self.salt) + \
+               " | iv2: " + hexlify(self.iv2) + ", salt2: " + hexlify(self.salt2) + ">"
 
     def set_preference_manager(self, preference_manager):
         """
