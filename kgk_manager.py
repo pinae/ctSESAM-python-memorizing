@@ -239,8 +239,8 @@ class KgkManager:
         """
         Resets the kgk manager.
         """
-        self.salt = None
+        self.salt = b''
         self.iv2 = None
         self.salt2 = None
-        self.kgk = None
+        self.kgk = b''
         self.kgk_crypter = None
