@@ -23,8 +23,8 @@ class KgkManager:
         self.salt = b''
 
     def __str__(self):
-        return "<KGK: " + hexlify(self.kgk) + ", salt: " + hexlify(self.salt) + \
-               " | iv2: " + hexlify(self.iv2) + ", salt2: " + hexlify(self.salt2) + ">"
+        return "<KGK: " + str(hexlify(self.kgk)) + ", salt: " + str(hexlify(self.salt)) + \
+               " | iv2: " + str(hexlify(self.iv2)) + ", salt2: " + str(hexlify(self.salt2)) + ">"
 
     def set_preference_manager(self, preference_manager):
         """
