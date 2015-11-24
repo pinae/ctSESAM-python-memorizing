@@ -8,7 +8,7 @@ import os
 PASSWORD_SETTINGS_FILE = os.path.expanduser('~/.ctSESAM.pws')
 
 
-class PreferenceManager:
+class PreferenceManager(object):
     """
 
 
