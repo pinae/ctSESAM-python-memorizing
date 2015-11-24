@@ -642,7 +642,7 @@ class PasswordSetting(object):
         inserted_upper = False
         inserted_digit = False
         inserted_extra = False
-        for i in range(self.get_length()):
+        for _ in range(self.get_length()):
             if self.force_character_classes and self.use_lower_case() and not inserted_lower:
                 l.append('a')
                 inserted_lower = True
