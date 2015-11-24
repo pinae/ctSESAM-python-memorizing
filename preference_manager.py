@@ -25,8 +25,8 @@ class PreferenceManager(object):
         Read the settings file.
         """
         if os.path.isfile(self.settings_file):
-            with open(self.settings_file, 'rb') as file:
-                self.data = file.read()
+            with open(self.settings_file, 'rb') as f:
+                self.data = f.read()
 
     def get_salt(self):
         """
