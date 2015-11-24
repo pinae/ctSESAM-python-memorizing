@@ -8,7 +8,7 @@ c't SESAM implementations.
 from hashlib import pbkdf2_hmac
 
 
-class CtSesam:
+class CtSesam(object):
     """
     Calculates passwords from masterpasswords and domain names. You may set the salt and iteration count to
     something of your liking. If not set default values will be used.
