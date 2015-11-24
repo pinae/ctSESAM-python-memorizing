@@ -10,7 +10,7 @@ from binascii import hexlify
 import os
 
 
-class KgkManager:
+class KgkManager(object):
     """
     New KgkManagers are uninitialized and need either a new kgk or get one by decrypting an existing one.
     """
