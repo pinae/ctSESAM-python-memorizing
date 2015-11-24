@@ -19,7 +19,7 @@ DEFAULT_CHARACTER_SET_DIGITS = string.digits
 DEFAULT_CHARACTER_SET_EXTRA = '#!"§$%&/()[]{}=-_+*<>;:.'
 
 
-class PasswordSetting:
+class PasswordSetting(object):
     """
     This saves one set of settings for a certain domain. Use a PasswordSettingsManager to save the settings to a file.
     """
