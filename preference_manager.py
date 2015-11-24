@@ -49,12 +49,12 @@ class PreferenceManager(object):
         if len(salt) != 32:
             raise ValueError("The salt has to be 32 bytes.")
         if os.path.isfile(self.settings_file):
-            with open(self.settings_file, 'rb+') as file:
-                file.seek(0)
-                file.write(salt)
+            with open(self.settings_file, 'rb+') as f:
+                f.seek(0)
+                f.write(salt)
         else:
-            with open(self.settings_file, 'wb') as file:
-                file.write(salt)
+            with open(self.settings_file, 'wb') as f:
+                f.write(salt)
         self.data = salt + self.data[32:]
         self.set_hidden()
 
@@ -79,13 +79,13 @@ class PreferenceManager(object):
         if len(kgk_block) != 112:
             raise ValueError("The kgk_block has to be 112 bytes.")
         if os.path.isfile(self.settings_file):
-            with open(self.settings_file, 'rb+') as file:
-                file.seek(32)
-                file.write(kgk_block)
+            with open(self.settings_file, 'rb+') as f:
+                f.seek(32)
+                f.write(kgk_block)
         else:
-            with open(self.settings_file, 'wb') as file:
-                file.write(b'\x00'*32)
-                file.write(kgk_block)
+            with open(self.settings_file, 'wb') as f:
+                f.write(b'\x00'*32)
+                f.write(kgk_block)
         self.data = self.data[:32] + kgk_block + self.data[144:]
         self.set_hidden()
 
@@ -108,14 +108,14 @@ class PreferenceManager(object):
         if type(settings_data) != bytes:
             raise TypeError("The kgk_block must be bytes.")
         if os.path.isfile(self.settings_file):
-            with open(self.settings_file, 'rb+') as file:
-                file.seek(144)
-                file.write(settings_data)
-                file.truncate()
+            with open(self.settings_file, 'rb+') as f:
+                f.seek(144)
+                f.write(settings_data)
+                f.truncate()
         else:
-            with open(self.settings_file, 'wb') as file:
-                file.write(b'\x00'*144)
-                file.write(settings_data)
+            with open(self.settings_file, 'wb') as f:
+                f.write(b'\x00'*144)
+                f.write(settings_data)
         self.data = self.data[:144] + settings_data
         self.set_hidden()
 
