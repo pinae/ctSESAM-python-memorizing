@@ -9,7 +9,7 @@ from hashlib import pbkdf2_hmac
 import os
 
 
-class Crypter:
+class Crypter(object):
     """
     Encrypt and decrypt with AES in CBC mode with PKCS7 padding. The constructor calculates the key from the given
     password and salt with PBKDF2 using HMAC with SHA512 and 32768 iterations.
