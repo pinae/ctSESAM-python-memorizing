@@ -7,7 +7,7 @@ import base64
 import os
 
 
-class Sync:
+class Sync(object):
     """
     Sync connection wrapper.
 
