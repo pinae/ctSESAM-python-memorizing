@@ -25,7 +25,7 @@ class PreferenceManager:
         Read the settings file.
         """
         if os.path.isfile(self.settings_file):
-            with open(self.settings_file, 'br') as file:
+            with open(self.settings_file, 'rb') as file:
                 self.data = file.read()
 
     def get_salt(self):
@@ -49,11 +49,11 @@ class PreferenceManager:
         if len(salt) != 32:
             raise ValueError("The salt has to be 32 bytes.")
         if os.path.isfile(self.settings_file):
-            with open(self.settings_file, 'br+') as file:
+            with open(self.settings_file, 'rb+') as file:
                 file.seek(0)
                 file.write(salt)
         else:
-            with open(self.settings_file, 'bw') as file:
+            with open(self.settings_file, 'wb') as file:
                 file.write(salt)
         self.data = salt + self.data[32:]
         self.set_hidden()
@@ -79,11 +79,11 @@ class PreferenceManager:
         if len(kgk_block) != 112:
             raise ValueError("The kgk_block has to be 112 bytes.")
         if os.path.isfile(self.settings_file):
-            with open(self.settings_file, 'br+') as file:
+            with open(self.settings_file, 'rb+') as file:
                 file.seek(32)
                 file.write(kgk_block)
         else:
-            with open(self.settings_file, 'bw') as file:
+            with open(self.settings_file, 'wb') as file:
                 file.write(b'\x00'*32)
                 file.write(kgk_block)
         self.data = self.data[:32] + kgk_block + self.data[144:]
@@ -108,12 +108,12 @@ class PreferenceManager:
         if type(settings_data) != bytes:
             raise TypeError("The kgk_block must be bytes.")
         if os.path.isfile(self.settings_file):
-            with open(self.settings_file, 'br+') as file:
+            with open(self.settings_file, 'rb+') as file:
                 file.seek(144)
                 file.write(settings_data)
                 file.truncate()
         else:
-            with open(self.settings_file, 'bw') as file:
+            with open(self.settings_file, 'wb') as file:
                 file.write(b'\x00'*144)
                 file.write(settings_data)
         self.data = self.data[:144] + settings_data
