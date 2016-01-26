@@ -31,13 +31,11 @@ class PasswordSetting(object):
         self.notes = None
         self.iterations = 4096
         self.salt = Crypter.createSalt()
-        self.length = 10
         self.creation_date = datetime.now()
         self.modification_date = self.creation_date
-        self.used_characters = self.get_default_character_set()
         self.extra_characters = DEFAULT_CHARACTER_SET_EXTRA
-        self.template = None
-        self.force_character_classes = False
+        self.template = 'x'*10
+        self.calculate_template(True, True, True, True)
         self.synced = False
 
     def __str__(self):
@@ -50,23 +48,11 @@ class PasswordSetting(object):
             output += "notes: " + str(self.notes) + ", "
         output += "iterations: " + str(self.iterations) + ", "
         output += "salt: " + str(binascii.hexlify(self.salt)) + ", "
-        if self.force_character_classes and self.template:
-            output += "template: " + str(self.template) + ", "
-        else:
-            output += "length: " + str(self.length) + ", "
+        output += "template: " + str(self.template) + ", "
         output += "modification date: " + self.get_modification_date() + ", "
         output += "creation date: " + self.get_creation_date() + ", "
-        output += "used characters: \"" + self.used_characters + "\", "
         if self.extra_characters:
             output += "extra characters: \"" + self.extra_characters + "\", "
-        if self.use_lower_case():
-            output += "using lower case characters, "
-        if self.use_upper_case():
-            output += "using upper case characters, "
-        if self.use_digits():
-            output += "using digits, "
-        if self.use_extra():
-            output += "using special characters, "
         if self.synced:
             output += "synced"
         else:
@@ -157,200 +143,46 @@ class PasswordSetting(object):
             self.synced = False
         self.legacy_password = legacy_password
 
-    def set_use(self, use, character_set):
-        """
-        Generic method to add or remove characters from the character set.
-
-        :param use: should the characters be used?
-        :type use: bool
-        :param character_set: character set which should be inserted or removed
-        :type character_set: str
-        """
-        s = set(self.used_characters)
-        if use:
-            for c in character_set:
-                s.add(c)
-        else:
-            for c in character_set:
-                if c in s:
-                    s.remove(c)
-        new_character_set = ""
-        for c in DEFAULT_CHARACTER_SET_LOWER_CASE + DEFAULT_CHARACTER_SET_UPPER_CASE + \
-                DEFAULT_CHARACTER_SET_DIGITS + DEFAULT_CHARACTER_SET_EXTRA:
-            if c in s:
-                new_character_set += c
-                s.remove(c)
-        new_character_set += "".join(s)
-        self.used_characters = new_character_set
-
-    def use_letters(self):
-        """
-        Returns true if the character set contains the default set of letters at the default position and with the
-        default order.
-
-        :return: does it use letters?
-        :rtype: bool
-        """
-        return self.used_characters[:len(DEFAULT_CHARACTER_SET_LOWER_CASE + DEFAULT_CHARACTER_SET_UPPER_CASE)] == \
-            DEFAULT_CHARACTER_SET_LOWER_CASE + DEFAULT_CHARACTER_SET_UPPER_CASE
-
-    def set_use_letters(self, use_letters):
-        """
-        If set to True the letters are moved to the default position and brought into the default order. Missing
-        letters are inserted. If set to False all default letters are removed from the character set.
-
-        :param use_letters:
-        :type use_letters: bool
-        """
-        old_character_set = self.used_characters
-        self.set_use(use_letters, DEFAULT_CHARACTER_SET_LOWER_CASE + DEFAULT_CHARACTER_SET_UPPER_CASE)
-        if old_character_set != self.used_characters:
-            self.calculate_template()
-            self.synced = False
-
-    def use_lower_case(self):
-        """
-        Returns true if the character set contains the default set of lower case letters at the default position and
-        with the default order.
-
-        :return: using lower case?
-        :rtype: bool
-        """
-        return self.used_characters[:len(DEFAULT_CHARACTER_SET_LOWER_CASE)] == DEFAULT_CHARACTER_SET_LOWER_CASE
-
-    def set_use_lower_case(self, use_lower_case):
-        """
-        If set to True the lower case letters are moved to the default position and brought into the default order.
-        Missing lower case letters are inserted. If set to False all lower case letters are removed from the character
-        set.
-
-        :param use_lower_case:
-        :type use_lower_case: bool
-        """
-        old_character_set = self.used_characters
-        self.set_use(use_lower_case, DEFAULT_CHARACTER_SET_LOWER_CASE)
-        if old_character_set != self.used_characters:
-            self.calculate_template()
-            self.synced = False
-
-    def use_upper_case(self):
-        """
-        Returns true if the character set contains the default set of upper case letters at the default position and
-        with the default order.
-
-        :return: use upper case?
-        :rtype: bool
-        """
-        return self.used_characters[
-            len(DEFAULT_CHARACTER_SET_LOWER_CASE):len(
-                DEFAULT_CHARACTER_SET_LOWER_CASE + DEFAULT_CHARACTER_SET_UPPER_CASE)] \
-            == DEFAULT_CHARACTER_SET_UPPER_CASE
-
-    def set_use_upper_case(self, use_upper_case):
-        """
-        If set to True the upper case letters are moved to the default position and brought into the default order.
-        Missing upper case letters from the default set of upper case letters are inserted. If set to False all
-        default upper case letters are removed from the character set.
-
-        :param use_upper_case:
-        :type use_upper_case: bool
-        """
-        old_character_set = self.used_characters
-        self.set_use(use_upper_case, DEFAULT_CHARACTER_SET_UPPER_CASE)
-        if old_character_set != self.used_characters:
-            self.calculate_template()
-            self.synced = False
-
-    def use_digits(self):
-        """
-        Returns true if the character set contains digits at the default position and with the default order.
-
-        :return: use digits?
-        :rtype: bool
-        """
-        return self.used_characters[
-            len(DEFAULT_CHARACTER_SET_LOWER_CASE + DEFAULT_CHARACTER_SET_UPPER_CASE):len(
-                DEFAULT_CHARACTER_SET_LOWER_CASE + DEFAULT_CHARACTER_SET_UPPER_CASE + DEFAULT_CHARACTER_SET_DIGITS)] \
-            == DEFAULT_CHARACTER_SET_DIGITS
-
-    def set_use_digits(self, use_digits):
-        """
-        If set to True the digits are moved to the default position and brought into the default order.
-        Missing digits are inserted. If set to False all digits are removed from the character set.
-
-        :param use_digits:
-        :type use_digits: bool
-        """
-        old_character_set = self.used_characters
-        self.set_use(use_digits, DEFAULT_CHARACTER_SET_DIGITS)
-        if old_character_set != self.used_characters:
-            self.calculate_template()
-            self.synced = False
-
-    def use_extra(self):
-        """
-        Returns true if the character set contains the special characters from the default set at the default position
-        and with the default order.
-
-        :return: use special characters?
-        :rtype: bool
-        """
-        return self.used_characters[
-            len(DEFAULT_CHARACTER_SET_LOWER_CASE + DEFAULT_CHARACTER_SET_UPPER_CASE + DEFAULT_CHARACTER_SET_DIGITS):] \
-            == DEFAULT_CHARACTER_SET_EXTRA
-
-    def set_use_extra(self, use_extra):
-        """
-        If set to True the default special characters are moved to the default position and brought into the default
-        order. Missing special characters from the default set are inserted. If set to False all special characters
-        from the default set are removed from the character set.
-
-        :param use_extra:
-        :type use_extra: bool
-        """
-        old_character_set = self.used_characters
-        s = set(self.used_characters)
-        if use_extra:
-            for c in DEFAULT_CHARACTER_SET_EXTRA:
-                s.add(c)
-        else:
-            for c in list(s):
-                if c not in DEFAULT_CHARACTER_SET_LOWER_CASE + DEFAULT_CHARACTER_SET_UPPER_CASE + \
-                        DEFAULT_CHARACTER_SET_DIGITS:
-                    s.remove(c)
-        new_character_set = ""
-        for c in DEFAULT_CHARACTER_SET_LOWER_CASE + DEFAULT_CHARACTER_SET_UPPER_CASE + \
-                DEFAULT_CHARACTER_SET_DIGITS + DEFAULT_CHARACTER_SET_EXTRA:
-            if c in s:
-                new_character_set += c
-                s.remove(c)
-        new_character_set += "".join(s)
-        self.used_characters = new_character_set
-        if old_character_set != new_character_set:
-            self.calculate_template()
-            self.synced = False
-
-    def use_custom_character_set(self):
-        """
-        Returns false if the character set is set to the default character set.
-
-        :return: are we using a custom character set?
-        :rtype: bool
-        """
-        return not self.used_characters == DEFAULT_CHARACTER_SET_LOWER_CASE + DEFAULT_CHARACTER_SET_UPPER_CASE + \
-            DEFAULT_CHARACTER_SET_DIGITS + DEFAULT_CHARACTER_SET_EXTRA
-
     @staticmethod
     def get_default_character_set():
         """
-        Returns the default character set. This is completely independent of the character set stored at instances
-        of this class.
+        Returns the default character set.
 
         :return: the default character set
         :rtype: str
         """
         return DEFAULT_CHARACTER_SET_LOWER_CASE + DEFAULT_CHARACTER_SET_UPPER_CASE + \
             DEFAULT_CHARACTER_SET_DIGITS + DEFAULT_CHARACTER_SET_EXTRA
+
+    @staticmethod
+    def get_lower_case_character_set():
+        """
+        Returns the lower case character set.
+
+        :return: the lower case character set
+        :rtype: str
+        """
+        return DEFAULT_CHARACTER_SET_LOWER_CASE
+
+    @staticmethod
+    def get_upper_case_character_set():
+        """
+        Returns the upper case character set.
+
+        :return: the upper case character set
+        :rtype: str
+        """
+        return DEFAULT_CHARACTER_SET_UPPER_CASE
+
+    @staticmethod
+    def get_digits_character_set():
+        """
+        Returns the digits character set.
+
+        :return: the digits character set
+        :rtype: str
+        """
+        return DEFAULT_CHARACTER_SET_DIGITS
 
     def get_character_set(self):
         """
@@ -359,47 +191,16 @@ class PasswordSetting(object):
         :return: character set
         :rtype: str
         """
-        return self.used_characters
-
-    def set_custom_character_set(self, character_set):
-        """
-        Sets the character set to the given string. Use this method to save reordered default sets.
-
-        :param str character_set: character set
-        """
-        if self.used_characters != character_set:
-            self.synced = False
-        self.used_characters = character_set
-
-    @staticmethod
-    def get_lower_character_set():
-        """
-        Returns the default lower case characters.
-
-        :return: string with lower case characters
-        :rtype: str
-        """
-        return DEFAULT_CHARACTER_SET_LOWER_CASE
-
-    @staticmethod
-    def get_upper_character_set():
-        """
-        Returns the default upper case characters.
-
-        :return: string with upper case characters
-        :rtype: str
-        """
-        return DEFAULT_CHARACTER_SET_UPPER_CASE
-
-    @staticmethod
-    def get_digits_character_set():
-        """
-        Returns the default digits characters.
-
-        :return: string with digits characters
-        :rtype: str
-        """
-        return DEFAULT_CHARACTER_SET_DIGITS
+        used_characters = ""
+        if 'n' in self.get_template():
+            used_characters += DEFAULT_CHARACTER_SET_DIGITS
+        if 'a' in self.get_template():
+            used_characters += DEFAULT_CHARACTER_SET_LOWER_CASE
+        if 'A' in self.get_template():
+            used_characters += DEFAULT_CHARACTER_SET_UPPER_CASE
+        if 'o' in self.get_template():
+            used_characters += self.get_extra_character_set()
+        return used_characters
 
     def get_extra_character_set(self):
         """
@@ -464,19 +265,7 @@ class PasswordSetting(object):
         :return: length
         :rtype: int
         """
-        return self.length
-
-    def set_length(self, length):
-        """
-        Sets the desired length.
-
-        :param length:
-        :type length: int
-        """
-        if self.length != length:
-            self.length = length
-            self.calculate_template()
-            self.synced = False
+        return len(self.get_template())
 
     def get_iterations(self):
         """
@@ -633,26 +422,42 @@ class PasswordSetting(object):
         else:
             return ""
 
-    def calculate_template(self):
+    def calculate_template(self, use_lower_case=None, use_upper_case=None, use_digits=None, use_extra=None):
         """
         Calculates a new template based on the character set configuration and the length.
+        :param use_extra: Gets this setting from the current template if None.
+        :type use_extra: bool
+        :param use_digits: Gets this setting from the current template if None.
+        :type use_digits: bool
+        :param use_upper_case: Gets this setting from the current template if None.
+        :type use_upper_case: bool
+        :param use_lower_case: Gets this setting from the current template if None.
+        :type use_lower_case: bool
         """
+        if use_lower_case is None:
+            use_lower_case = 'a' in self.get_template()
+        if use_upper_case is None:
+            use_upper_case = 'A' in self.get_template()
+        if use_digits is None:
+            use_digits = 'n' in self.get_template()
+        if use_extra is None:
+            use_extra = 'o' in self.get_template()
         l = []
         inserted_lower = False
         inserted_upper = False
         inserted_digit = False
         inserted_extra = False
         for _ in range(self.get_length()):
-            if self.force_character_classes and self.use_lower_case() and not inserted_lower:
+            if use_lower_case and not inserted_lower:
                 l.append('a')
                 inserted_lower = True
-            elif self.force_character_classes and self.use_upper_case() and not inserted_upper:
+            elif use_upper_case and not inserted_upper:
                 l.append('A')
                 inserted_upper = True
-            elif self.force_character_classes and self.use_digits() and not inserted_digit:
+            elif use_digits and not inserted_digit:
                 l.append('n')
                 inserted_digit = True
-            elif self.force_character_classes and self.use_extra() and not inserted_extra:
+            elif use_extra and not inserted_extra:
                 l.append('o')
                 inserted_extra = True
             else:
@@ -683,9 +488,6 @@ class PasswordSetting(object):
         if matches and len(matches.groups()) >= 2:
             self.set_complexity(int(matches.group(1)))
             self.template = matches.group(2)
-            self.force_character_classes = 'a' in self.template or 'A' in self.template or \
-                                           'n' in self.template or 'o' in self.template
-            self.length = len(self.template)
 
     def set_complexity(self, complexity):
         """
@@ -694,43 +496,7 @@ class PasswordSetting(object):
         :param complexity: 0, 1, 2, 3, 4, 5 or 6
         :type complexity: int
         """
-        if 0 <= complexity <= 6:
-            if complexity == 0:
-                self.set_use_digits(True)
-                self.set_use_lower_case(False)
-                self.set_use_upper_case(False)
-                self.set_use_extra(False)
-            elif complexity == 1:
-                self.set_use_digits(False)
-                self.set_use_lower_case(True)
-                self.set_use_upper_case(False)
-                self.set_use_extra(False)
-            elif complexity == 2:
-                self.set_use_digits(False)
-                self.set_use_lower_case(False)
-                self.set_use_upper_case(True)
-                self.set_use_extra(False)
-            elif complexity == 3:
-                self.set_use_digits(True)
-                self.set_use_lower_case(True)
-                self.set_use_upper_case(False)
-                self.set_use_extra(False)
-            elif complexity == 4:
-                self.set_use_digits(False)
-                self.set_use_lower_case(True)
-                self.set_use_upper_case(True)
-                self.set_use_extra(False)
-            elif complexity == 5:
-                self.set_use_digits(True)
-                self.set_use_lower_case(True)
-                self.set_use_upper_case(True)
-                self.set_use_extra(False)
-            elif complexity == 6:
-                self.set_use_digits(True)
-                self.set_use_lower_case(True)
-                self.set_use_upper_case(True)
-                self.set_use_extra(True)
-        else:
+        if not 0 <= complexity <= 6:
             ValueError("The complexity must be in the range 0 to 6.")
 
     def get_complexity(self):
@@ -741,26 +507,26 @@ class PasswordSetting(object):
         :return: a digit from 0 to 6 or -1
         :rtype: int
         """
-        if self.use_digits() and not self.use_lower_case() and \
-                not self.use_upper_case() and not self.use_extra():
+        if 'n' in self.get_template() and 'a' not in self.get_template() and \
+                'A' not in self.get_template() and 'o' not in self.get_template():
             return 0
-        elif not self.use_digits() and self.use_lower_case() and \
-                not self.use_upper_case() and not self.use_extra():
+        elif 'n' not in self.get_template() and 'a' in self.get_template() and \
+                'A' not in self.get_template() and 'o' not in self.get_template():
             return 1
-        elif not self.use_digits() and not self.use_lower_case() and \
-                self.use_upper_case() and not self.use_extra():
+        elif 'n' not in self.get_template() and 'a' not in self.get_template() and \
+                'A' in self.get_template() and 'o' not in self.get_template():
             return 2
-        elif self.use_digits() and self.use_lower_case() and \
-                not self.use_upper_case() and not self.use_extra():
+        elif 'n' in self.get_template() and 'a' in self.get_template() and \
+                'A' not in self.get_template() and 'o' not in self.get_template():
             return 3
-        elif not self.use_digits() and self.use_lower_case() and \
-                self.use_upper_case() and not self.use_extra():
+        elif 'n' not in self.get_template() and 'a' in self.get_template() and \
+                'A' in self.get_template() and 'o' not in self.get_template():
             return 4
-        elif self.use_digits() and self.use_lower_case() and \
-                self.use_upper_case() and not self.use_extra():
+        elif 'n' in self.get_template() and 'a' in self.get_template() and \
+                'A' in self.get_template() and 'o' not in self.get_template():
             return 5
-        elif self.use_digits() and self.use_lower_case() and \
-                self.use_upper_case() and self.use_extra():
+        elif 'n' in self.get_template() and 'a' in self.get_template() and \
+                'A' in self.get_template() and 'o' in self.get_template():
             return 6
         else:
             return -1
@@ -802,13 +568,10 @@ class PasswordSetting(object):
         domain_object["iterations"] = self.get_iterations()
         if self.salt:
             domain_object["salt"] = str(b64encode(self.get_salt()), encoding='utf-8')
-        domain_object["length"] = self.get_length()
         domain_object["cDate"] = self.get_creation_date()
         domain_object["mDate"] = self.get_modification_date()
-        domain_object["usedCharacters"] = self.get_character_set()
         domain_object["extras"] = self.get_extra_character_set()
-        if self.force_character_classes:
-            domain_object["passwordTemplate"] = self.get_full_template()
+        domain_object["passwordTemplate"] = self.get_full_template()
         return domain_object
 
     def load_from_dict(self, loaded_setting):
@@ -830,18 +593,19 @@ class PasswordSetting(object):
             self.set_iterations(loaded_setting["iterations"])
         if "salt" in loaded_setting:
             self.set_salt(b64decode(loaded_setting["salt"]))
-        if "length" in loaded_setting:
-            self.set_length(loaded_setting["length"])
         if "cDate" in loaded_setting:
             self.set_creation_date(loaded_setting["cDate"])
         if "mDate" in loaded_setting:
             self.set_modification_date(loaded_setting["mDate"])
-        if "usedCharacters" in loaded_setting:
-            self.set_custom_character_set(loaded_setting["usedCharacters"])
         if "extras" in loaded_setting:
             self.set_extra_character_set(loaded_setting["extras"])
         if "passwordTemplate" in loaded_setting:
             self.set_full_template(loaded_setting["passwordTemplate"])
+        if "length" in loaded_setting and "usedCharacters" in loaded_setting and \
+           "passwordTemplate" not in loaded_setting:
+            self.template = "o"*int(loaded_setting["length"])
+            self.set_extra_character_set(loaded_setting["extras"])
+            self.calculate_template(False, False, False, True)
 
     def ask_for_input(self):
         """
@@ -859,7 +623,8 @@ class PasswordSetting(object):
                     length = self.get_length()
             except ValueError:
                 length = self.get_length()
-            self.set_length(length)
+            self.set_full_template("6;" + "x"*length)
+            self.calculate_template(True, True, True, True)
             iterations_str = input('Iterationszahl [' + str(self.get_iterations()) + ']: ')
             try:
                 iterations = int(iterations_str)

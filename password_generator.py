@@ -50,8 +50,8 @@ class CtSesam(object):
         password = ""
         character_set = setting.get_character_set()
         digits_set = setting.get_digits_character_set()
-        lower_set = setting.get_lower_character_set()
-        upper_set = setting.get_upper_character_set()
+        lower_set = setting.get_lower_case_character_set()
+        upper_set = setting.get_upper_case_character_set()
         extra_set = setting.get_extra_character_set()
         template = setting.get_template()
         for t in template:
