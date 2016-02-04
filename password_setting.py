@@ -151,8 +151,8 @@ class PasswordSetting(object):
         :return: the default character set
         :rtype: str
         """
-        return DEFAULT_CHARACTER_SET_LOWER_CASE + DEFAULT_CHARACTER_SET_UPPER_CASE + \
-            DEFAULT_CHARACTER_SET_DIGITS + DEFAULT_CHARACTER_SET_EXTRA
+        return DEFAULT_CHARACTER_SET_DIGITS + DEFAULT_CHARACTER_SET_LOWER_CASE + DEFAULT_CHARACTER_SET_UPPER_CASE + \
+            DEFAULT_CHARACTER_SET_EXTRA
 
     @staticmethod
     def get_lower_case_character_set():
@@ -318,7 +318,6 @@ class PasswordSetting(object):
             self.creation_date = datetime.strptime(creation_date, "%Y-%m-%dT%H:%M:%S")
         except ValueError:
             print("This date has a wrong format: " + creation_date)
-            self.creation_date = datetime.now()
         if self.modification_date < self.creation_date:
             self.modification_date = self.creation_date
 
@@ -354,7 +353,6 @@ class PasswordSetting(object):
                 self.modification_date = datetime.strptime(modification_date, "%Y-%m-%dT%H:%M:%S")
             except ValueError:
                 print("This date has a wrong format: " + modification_date)
-                self.modification_date = datetime.now()
         else:
             self.modification_date = datetime.now()
         if self.modification_date < self.creation_date:
@@ -425,6 +423,7 @@ class PasswordSetting(object):
     def calculate_template(self, use_lower_case=None, use_upper_case=None, use_digits=None, use_extra=None):
         """
         Calculates a new template based on the character set configuration and the length.
+
         :param use_extra: Gets this setting from the current template if None.
         :type use_extra: bool
         :param use_digits: Gets this setting from the current template if None.
@@ -472,8 +471,6 @@ class PasswordSetting(object):
         :return: template
         :rtype: str
         """
-        if not self.template:
-            self.calculate_template()
         return self.template
 
     def set_full_template(self, full_template):
@@ -604,7 +601,7 @@ class PasswordSetting(object):
         if "length" in loaded_setting and "usedCharacters" in loaded_setting and \
            "passwordTemplate" not in loaded_setting:
             self.template = "o"*int(loaded_setting["length"])
-            self.set_extra_character_set(loaded_setting["extras"])
+            self.set_extra_character_set(loaded_setting["usedCharacters"])
             self.calculate_template(False, False, False, True)
 
     def ask_for_input(self):
