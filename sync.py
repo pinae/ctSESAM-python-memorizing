@@ -34,7 +34,11 @@ class Sync(object):
         :return: base64 encoded data
         :rtype: str
         """
-        request = requests.post(self.server_url + "ajax/read.php",
+        if self.server_url[-1] == "/":
+            url = self.server_url + "ajax/read.php"
+        else:
+            url = self.server_url + "/ajax/read.php"
+        request = requests.post(url,
                                 data="",
                                 headers=self.headers,
                                 verify=os.path.join(os.path.dirname(os.path.realpath(__file__)),
@@ -59,7 +63,11 @@ class Sync(object):
         :return: was the push successful?
         :rtype: bool
         """
-        response = requests.post(self.server_url + "ajax/write.php",
+        if self.server_url[-1] == "/":
+            url = self.server_url + "ajax/write.php"
+        else:
+            url = self.server_url + "/ajax/write.php"
+        response = requests.post(url,
                                  data={'data': data},
                                  headers=self.headers,
                                  verify=os.path.join(os.path.dirname(os.path.realpath(__file__)),
