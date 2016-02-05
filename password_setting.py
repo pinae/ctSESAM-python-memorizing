@@ -418,7 +418,7 @@ class PasswordSetting(object):
         if complexity >= 0:
             return str(complexity) + ";" + self.get_template()
         else:
-            return ""
+            return self.get_template()
 
     def calculate_template(self, use_lower_case=None, use_upper_case=None, use_digits=None, use_extra=None):
         """
@@ -473,7 +473,7 @@ class PasswordSetting(object):
         """
         return self.template
 
-    def set_full_template(self, full_template):
+    def set_template(self, full_template):
         """
         Sets a template from a complete template string with digit and semicolon. This also preferences the template
         so other settings might get ignored.
@@ -481,20 +481,21 @@ class PasswordSetting(object):
         :param full_template: complete template string
         :type full_template: str
         """
-        matches = re.compile("([0123456]);([aAnox]+)").match(full_template)
-        if matches and len(matches.groups()) >= 2:
-            self.set_complexity(int(matches.group(1)))
-            self.template = matches.group(2)
+        matches = re.compile("(([01234567]);)?([aAnox]+)").match(full_template)
+        if matches and len(matches.groups()) >= 3:
+            if matches.group(2):
+                self.set_complexity(int(matches.group(2)))
+            self.template = matches.group(3)
 
     def set_complexity(self, complexity):
         """
         Sets the complexity by activating the appropriate character groups.
 
-        :param complexity: 0, 1, 2, 3, 4, 5 or 6
+        :param complexity: 0, 1, 2, 3, 4, 5, 6 or 7
         :type complexity: int
         """
-        if not 0 <= complexity <= 6:
-            ValueError("The complexity must be in the range 0 to 6.")
+        if not 0 <= complexity <= 7:
+            ValueError("The complexity must be in the range 0 to 7.")
 
     def get_complexity(self):
         """
@@ -525,6 +526,9 @@ class PasswordSetting(object):
         elif 'n' in self.get_template() and 'a' in self.get_template() and \
                 'A' in self.get_template() and 'o' in self.get_template():
             return 6
+        elif 'n' not in self.get_template() and 'a' not in self.get_template() and \
+                'A' not in self.get_template() and 'o' in self.get_template():
+            return 7
         else:
             return -1
 
@@ -568,7 +572,7 @@ class PasswordSetting(object):
         domain_object["cDate"] = self.get_creation_date()
         domain_object["mDate"] = self.get_modification_date()
         domain_object["extras"] = self.get_extra_character_set()
-        domain_object["passwordTemplate"] = self.get_full_template()
+        domain_object["passwordTemplate"] = self.get_template()
         return domain_object
 
     def load_from_dict(self, loaded_setting):
@@ -597,7 +601,7 @@ class PasswordSetting(object):
         if "extras" in loaded_setting:
             self.set_extra_character_set(loaded_setting["extras"])
         if "passwordTemplate" in loaded_setting:
-            self.set_full_template(loaded_setting["passwordTemplate"])
+            self.set_template(loaded_setting["passwordTemplate"])
         if "length" in loaded_setting and "usedCharacters" in loaded_setting and \
            "passwordTemplate" not in loaded_setting:
             self.template = "o"*int(loaded_setting["length"])
@@ -620,7 +624,7 @@ class PasswordSetting(object):
                     length = self.get_length()
             except ValueError:
                 length = self.get_length()
-            self.set_full_template("6;" + "x"*length)
+            self.set_template("6;" + "x"*length)
             self.calculate_template(True, True, True, True)
             iterations_str = input('Iterationszahl [' + str(self.get_iterations()) + ']: ')
             try:

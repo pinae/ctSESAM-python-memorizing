@@ -105,9 +105,11 @@ class TestPasswordSettingsManager(unittest.TestCase):
         self.assertIn('abc.de', self.manager.get_domain_list())
 
     def test_store_local_settings(self):
-        self.manager.get_setting('abc.de')
+        abc_setting = self.manager.get_setting('abc.de')
+        abc_setting.set_template('xAxonaxxxx')
+        self.manager.set_setting(abc_setting)
         new_setting = PasswordSetting('hugo.com')
-        new_setting.set_length(12)
+        new_setting.set_template('xonxAxxaxxxx')
         self.manager.set_setting(new_setting)
         kgk_manager = KgkManager()
         kgk_manager.set_preference_manager(self.preference_manager)
@@ -122,16 +124,17 @@ class TestPasswordSettingsManager(unittest.TestCase):
         sync_settings_len = struct.unpack('!I', decrypted_settings[:4])[0]
         data = json.loads(Packer.decompress(decrypted_settings[4+sync_settings_len:]).decode('utf8'))
         self.assertEqual('abc.de', data['settings']['abc.de']['domain'])
-        self.assertEqual(10, data['settings']['abc.de']['length'])
+        self.assertEqual('xAxonaxxxx', data['settings']['abc.de']['passwordTemplate'])
         self.assertEqual('hugo.com', data['settings']['hugo.com']['domain'])
-        self.assertEqual(12, data['settings']['hugo.com']['length'])
+        self.assertEqual('xonxAxxaxxxx', data['settings']['hugo.com']['passwordTemplate'])
 
     def test_load_settings_from_file(self):
         settings = {
             'settings': {
                 'unit.test': {
                     'domain': 'unit.test',
-                    'length': 11,
+                    'passwordTemplate': 'xxxxxxxxxxo',
+                    'extras': '#OWspx6;3gov0/1',
                     'iterations': 5000,
                     'notes': 'Nice note!',
                     'cDate': '2011-02-12T11:07:31',
@@ -139,8 +142,8 @@ class TestPasswordSettingsManager(unittest.TestCase):
                 },
                 'some.domain': {
                     'domain': 'some.domain',
-                    'length': 4,
-                    'usedCharacters': '6478593021',
+                    'passwordTemplate': 'oxxx',
+                    'extras': '6478593021',
                     'cDate': '2013-06-17T04:03:41',
                     'mDate': '2014-08-02T10:37:12'
                 }
@@ -161,22 +164,22 @@ class TestPasswordSettingsManager(unittest.TestCase):
         self.manager.load_local_settings(kgk_manager)
         self.assertIn('unit.test', self.manager.get_domain_list())
         self.assertIn('some.domain', self.manager.get_domain_list())
-        self.assertEqual(11, self.manager.get_setting('unit.test').get_length())
+        self.assertEqual('xxxxxxxxxxo', self.manager.get_setting('unit.test').get_template())
         self.assertEqual(5000, self.manager.get_setting('unit.test').get_iterations())
         self.assertEqual('Nice note!', self.manager.get_setting('unit.test').get_notes())
-        self.assertEqual(4, self.manager.get_setting('some.domain').get_length())
+        self.assertEqual('oxxx', self.manager.get_setting('some.domain').get_template())
         self.assertEqual('6478593021', self.manager.get_setting('some.domain').get_character_set())
 
     def test_set_setting(self):
         setting = self.manager.get_setting('hugo.me')
-        setting.set_length(6)
+        setting.set_template('xonxAa')
         self.manager.set_setting(setting)
         self.assertIn('hugo.me', self.manager.get_domain_list())
         self.assertEqual(6, self.manager.get_setting('hugo.me').get_length())
 
     def test_delete_setting(self):
         setting = self.manager.get_setting('hugo.me')
-        setting.set_length(6)
+        setting.set_template('xonxAa')
         self.manager.set_setting(setting)
         self.assertIn('hugo.me', self.manager.get_domain_list())
         self.manager.delete_setting(setting)
@@ -188,22 +191,19 @@ class TestPasswordSettingsManager(unittest.TestCase):
                 'unit.test': {
                     'domain': 'unit.test',
                     'extras': '#!"§$%&/()[]{}=-_+*<>;:.',
-                    'length': 11,
+                    'passwordTemplate': 'xxxaoxxAxxn',
                     'iterations': 5000,
                     'notes': 'Nice note!',
                     'salt': 'cGVwcGVy',
-                    'usedCharacters': 'abcdefghijklmnopqrstuvwxyzABCDEFGHJKLMNPQRTUVWXYZ0123456789' +
-                                      '#!"§$%&/()[]{}=-_+*<>;:.',
                     'cDate': '2011-02-12T11:07:31',
                     'mDate': '2011-02-12T11:07:32'
                 },
                 'some.domain': {
                     'domain': 'some.domain',
                     'extras': '#!"§$%&/()[]{}=-_+*<>;:.',
-                    'length': 4,
+                    'passwordTemplate': 'xxxo',
                     'iterations': 4096,
                     'salt': 'cGVwcGVy',
-                    'usedCharacters': '6478593021',
                     'cDate': '2013-06-17T04:03:41',
                     'mDate': '2014-08-02T10:37:12'
                 }
@@ -237,22 +237,19 @@ class TestPasswordSettingsManager(unittest.TestCase):
                 'unit.test': {
                     'domain': 'unit.test',
                     'extras': '#!"§$%&/()[]{}=-_+*<>;:.',
-                    'length': 11,
+                    'passwordTemplate': 'xnxoaAxxxx',
                     'iterations': 5000,
                     'notes': 'Nice note!',
                     'salt': 'cGVwcGVy',
-                    'usedCharacters': 'abcdefghijklmnopqrstuvwxyzABCDEFGHJKLMNPQRTUVWXYZ0123456789' +
-                                      '#!"§$%&/()[]{}=-_+*<>;:.',
                     'cDate': '2011-02-12T11:07:31',
                     'mDate': '2011-02-12T11:07:32'
                 },
                 'some.domain': {
                     'domain': 'some.domain',
-                    'extras': '#!"§$%&/()[]{}=-_+*<>;:.',
-                    'length': 4,
+                    'extras': '6478593021',
+                    'passwordTemplate': 'xnxoaA',
                     'iterations': 4096,
                     'salt': 'cGVwcGVy',
-                    'usedCharacters': '6478593021',
                     'cDate': '2013-06-17T04:03:41',
                     'mDate': '2014-08-02T10:37:12'
                 }
@@ -288,7 +285,7 @@ class TestPasswordSettingsManager(unittest.TestCase):
             'settings': {
                 'unit.test': {
                     'domain': 'unit.test',
-                    'length': 11,
+                    'passwordTemplate': 'xxaAnoxxxxx',
                     'iterations': 5000,
                     'notes': 'Nice note!',
                     'salt': 'cGVwcGVy',
@@ -299,7 +296,7 @@ class TestPasswordSettingsManager(unittest.TestCase):
                 },
                 'some.domain': {
                     'domain': 'some.domain',
-                    'length': 4,
+                    'passwordTemplate': 'oanA',
                     'iterations': 4096,
                     'salt': 'cGVwcGVy',
                     'usedCharacters': '6478593021',
