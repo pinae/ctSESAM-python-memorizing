@@ -11,6 +11,7 @@ from password_settings_manager import PasswordSettingsManager
 from base64 import b64decode
 import argparse
 import getpass
+import sys
 
 
 def create_settings_manager(kgk_mng):
@@ -112,8 +113,9 @@ if __name__ == "__main__":
                 decrypt_remote_settings(kgk_manager, settings_manager)
             else:
                 print("Es konnte keine Verbindung aufgebaut werden.")
-    except ImportError: #ValueError:
+    except ValueError:
         print("Falsches Masterpasswort. Es wurden keine Einstellungen geladen.")
+        sys.exit(1)
     setting, setting_found = get_domain(args.domain)
     if not setting_found:
         setting.ask_for_input()
