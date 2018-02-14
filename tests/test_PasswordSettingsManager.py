@@ -302,6 +302,14 @@ class TestPasswordSettingsManager(unittest.TestCase):
                     'usedCharacters': '6478593021',
                     'cDate': '2013-06-17T04:03:41',
                     'mDate': '2014-08-02T10:37:12'
+                },
+                'some.other.domain': {
+                    'domain': 'some.other.domain',
+                    'passwordTemplate': 'oanA',
+                    'iterations': 4097,
+                    'salt': 'cGVwcGVy',
+                    'usedCharacters': '6478593021',
+                    'cDate': '2013-06-17T04:03:41'
                 }
             },
             'synced': []
@@ -322,9 +330,11 @@ class TestPasswordSettingsManager(unittest.TestCase):
         self.manager.load_settings(kgk_manager, 'xyz')
         self.assertIn('unit.test', self.manager.get_domain_list())
         self.assertIn('some.domain', self.manager.get_domain_list())
+        self.assertIn('some.other.domain', self.manager.get_domain_list())
         self.assertIn('third.domain', self.manager.get_domain_list())
         self.assertEqual(5001, self.manager.get_setting('unit.test').get_iterations())
         self.assertEqual(4096, self.manager.get_setting('some.domain').get_iterations())
+        self.assertEqual(4097, self.manager.get_setting('some.other.domain').get_iterations())
         self.assertEqual(4098, self.manager.get_setting('third.domain').get_iterations())
         file = os.path.expanduser('~/.ctSESAM_test_extra.pws')
         if os.path.isfile(file):
