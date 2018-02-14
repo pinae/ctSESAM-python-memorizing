@@ -82,6 +82,7 @@ def print_generated_password(password_setting, kgk, quiet):
     else:
         print('Passwort: ' + password)
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate domain passwords from your masterpassword.")
     parser.add_argument('-n', '--no-sync',
