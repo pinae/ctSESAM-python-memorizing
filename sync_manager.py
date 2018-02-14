@@ -73,7 +73,7 @@ class SyncManager(object):
         self.server_address = input("URL: ")
         self.username = input("Benutzername: ")
         self.password = input("Passwort: ")
-        line = input("Zertifikat im .pem-Format (beenden mit einer Leerzeile): ")
+        line = input("Zertifikat oder Zertifikatskette im .pem-Format (beenden mit einer Leerzeile): ")
         while len(line) > 0:
             self.certificate += line + "\n"
             line = input("")
