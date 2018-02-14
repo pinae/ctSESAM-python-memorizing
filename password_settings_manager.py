@@ -248,7 +248,11 @@ class PasswordSettingsManager(object):
                 setting = self.settings[i]
                 if setting.get_domain() == domain_name:
                     found = True
-                    if datetime.strptime(data_set['mDate'], "%Y-%m-%dT%H:%M:%S") > setting.get_m_date():
+                    if 'mDate' in data_set:
+                        last_modification_date = data_set['mDate']
+                    else:
+                        last_modification_date = data_set['cDate']
+                    if datetime.strptime(last_modification_date, "%Y-%m-%dT%H:%M:%S") > setting.get_m_date():
                         if 'deleted' in data_set and data_set['deleted']:
                             self.settings.pop(i)
                         else:
@@ -271,7 +275,11 @@ class PasswordSettingsManager(object):
                 data_set = self.remote_data[domain_name]
                 if setting.get_domain() == domain_name:
                     found = True
-                    if setting.get_m_date() >= datetime.strptime(data_set['mDate'], "%Y-%m-%dT%H:%M:%S"):
+                    if 'mDate' in data_set:
+                        last_modification_date = data_set['mDate']
+                    else:
+                        last_modification_date = data_set['cDate']
+                    if setting.get_m_date() >= datetime.strptime(last_modification_date, "%Y-%m-%dT%H:%M:%S"):
                         self.update_remote = True
             if not found:
                 self.update_remote = True
