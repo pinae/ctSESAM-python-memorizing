@@ -195,8 +195,8 @@ class TestPasswordSettingsManager(unittest.TestCase):
                     'iterations': 5000,
                     'notes': 'Nice note!',
                     'salt': 'cGVwcGVy',
-                    'cDate': '2011-02-12T11:07:31',
-                    'mDate': '2011-02-12T11:07:32'
+                    'cDate': '2011-02-12T11:07:31.000',
+                    'mDate': '2011-02-12T11:07:32.000'
                 },
                 'some.domain': {
                     'domain': 'some.domain',
@@ -204,8 +204,8 @@ class TestPasswordSettingsManager(unittest.TestCase):
                     'passwordTemplate': 'xxxo',
                     'iterations': 4096,
                     'salt': 'cGVwcGVy',
-                    'cDate': '2013-06-17T04:03:41',
-                    'mDate': '2014-08-02T10:37:12'
+                    'cDate': '2013-06-17T04:03:41.000',
+                    'mDate': '2014-08-02T10:37:12.000'
                 }
             },
             'synced': []
@@ -241,8 +241,8 @@ class TestPasswordSettingsManager(unittest.TestCase):
                     'iterations': 5000,
                     'notes': 'Nice note!',
                     'salt': 'cGVwcGVy',
-                    'cDate': '2011-02-12T11:07:31',
-                    'mDate': '2011-02-12T11:07:32'
+                    'cDate': '2011-02-12T11:07:31.000',
+                    'mDate': '2011-02-12T11:07:32.000'
                 },
                 'some.domain': {
                     'domain': 'some.domain',
@@ -250,8 +250,8 @@ class TestPasswordSettingsManager(unittest.TestCase):
                     'passwordTemplate': 'xnxoaA',
                     'iterations': 4096,
                     'salt': 'cGVwcGVy',
-                    'cDate': '2013-06-17T04:03:41',
-                    'mDate': '2014-08-02T10:37:12'
+                    'cDate': '2013-06-17T04:03:41.000',
+                    'mDate': '2014-08-02T10:37:12.000'
                 }
             },
             'synced': []

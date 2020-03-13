@@ -66,15 +66,15 @@ class TestPasswordSetting(unittest.TestCase):
         s = PasswordSetting("unit.test")
         s.set_modification_date("1995-01-01T01:14:12")
         s.set_creation_date("2001-01-01T02:14:12")
-        self.assertEqual("2001-01-01T02:14:12", s.get_creation_date())
-        self.assertEqual("2001-01-01T02:14:12", s.get_modification_date())
+        self.assertEqual("2001-01-01T02:14:12.000", s.get_creation_date())
+        self.assertEqual("2001-01-01T02:14:12.000", s.get_modification_date())
 
     def test_set_modification_date(self):
         s = PasswordSetting("unit.test")
         s.set_creation_date("2007-01-01T02:14:12")
         s.set_modification_date("2005-01-01T01:14:12")
-        self.assertEqual("2005-01-01T01:14:12", s.get_creation_date())
-        self.assertEqual("2005-01-01T01:14:12", s.get_modification_date())
+        self.assertEqual("2005-01-01T01:14:12.000", s.get_creation_date())
+        self.assertEqual("2005-01-01T01:14:12.000", s.get_modification_date())
 
     def test_notes(self):
         s = PasswordSetting("unit.test")
@@ -94,9 +94,9 @@ class TestPasswordSetting(unittest.TestCase):
         self.assertIn("domain", s.to_dict())
         self.assertEqual("unit.test", s.to_dict()["domain"])
         self.assertIn("cDate", s.to_dict())
-        self.assertEqual("2001-01-01T02:14:12", s.to_dict()["cDate"])
+        self.assertEqual("2001-01-01T02:14:12.000", s.to_dict()["cDate"])
         self.assertIn("mDate", s.to_dict())
-        self.assertEqual("2005-01-01T01:14:12", s.to_dict()["mDate"])
+        self.assertEqual("2005-01-01T01:14:12.000", s.to_dict()["mDate"])
         self.assertIn("salt", s.to_dict())
         self.assertEqual(str(b64encode("something".encode('utf-8')), encoding='utf-8'), s.to_dict()["salt"])
         self.assertIn("iterations", s.to_dict())
@@ -113,7 +113,7 @@ class TestPasswordSetting(unittest.TestCase):
                    "\"notes\": \"interesting note\", \"legacyPassword\": \"rtSr?bS,mi\", " +\
                    "\"extras\": \"AEIOUaeiou\", \"iterations\": 5341, " +\
                    "\"passwordTemplate\": \"7;xxxxoxxxxxxxxxxx\", \"salt\": \"ZmFzY2luYXRpbmc=\", " +\
-                   "\"cDate\": \"2001-01-01T02:14:12\", \"mDate\": \"2005-01-01T01:14:12\"}"
+                   "\"cDate\": \"2001-01-01T02:14:12.000\", \"mDate\": \"2005-01-01T01:14:12.000\"}"
         s = PasswordSetting(json.loads(json_str)["domain"])
         s.load_from_dict(json.loads(json_str))
         self.assertEquals("unit.test", s.get_domain())
@@ -127,8 +127,8 @@ class TestPasswordSetting(unittest.TestCase):
         self.assertEqual(len(expected_salt), len(s.get_salt()))
         for i in range(len(expected_salt)):
             self.assertEqual(expected_salt[i], s.get_salt()[i])
-        self.assertEquals("2001-01-01T02:14:12", s.get_creation_date())
-        self.assertEquals("2005-01-01T01:14:12", s.get_modification_date())
+        self.assertEquals("2001-01-01T02:14:12.000", s.get_creation_date())
+        self.assertEquals("2005-01-01T01:14:12.000", s.get_modification_date())
 
     def test_get_template(self):
         s = PasswordSetting("unit.test")
