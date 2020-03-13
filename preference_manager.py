@@ -5,7 +5,7 @@ The preference manager handles the access to the settings file.
 """
 import os
 
-PASSWORD_SETTINGS_FILE = os.path.expanduser('~/.ctSESAM.pws')
+PASSWORD_SETTINGS_FILE = os.path.expanduser('~/.config/ct/ctSESAM.pws')
 
 
 class PreferenceManager(object):
@@ -53,6 +53,8 @@ class PreferenceManager(object):
                 f.seek(0)
                 f.write(salt)
         else:
+            if not os.path.exists(os.path.dirname(self.settings_file)):
+                os.makedirs(os.path.dirname(self.settings_file))
             with open(self.settings_file, 'wb') as f:
                 f.write(salt)
         self.data = salt + self.data[32:]
@@ -83,6 +85,8 @@ class PreferenceManager(object):
                 f.seek(32)
                 f.write(kgk_block)
         else:
+            if not os.path.exists(os.path.dirname(self.settings_file)):
+                os.makedirs(os.path.dirname(self.settings_file))
             with open(self.settings_file, 'wb') as f:
                 f.write(b'\x00'*32)
                 f.write(kgk_block)
@@ -113,6 +117,8 @@ class PreferenceManager(object):
                 f.write(settings_data)
                 f.truncate()
         else:
+            if not os.path.exists(os.path.dirname(self.settings_file)):
+                os.makedirs(os.path.dirname(self.settings_file))
             with open(self.settings_file, 'wb') as f:
                 f.write(b'\x00'*144)
                 f.write(settings_data)

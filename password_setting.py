@@ -303,7 +303,7 @@ class PasswordSetting(object):
         :return: the creation date
         :rtype: str
         """
-        return self.creation_date.strftime("%Y-%m-%dT%H:%M:%S")
+        return self.create_ISO_date(self.creation_date)
 
     def set_creation_date(self, creation_date):
         """
@@ -315,7 +315,7 @@ class PasswordSetting(object):
         if self.creation_date != creation_date:
             self.synced = False
         try:
-            self.creation_date = datetime.strptime(creation_date, "%Y-%m-%dT%H:%M:%S")
+            self.creation_date = self.convert_ISO_date(creation_date)
         except ValueError:
             print("This date has a wrong format: " + creation_date)
         if self.modification_date < self.creation_date:
@@ -337,7 +337,7 @@ class PasswordSetting(object):
         :return: the modification date
         :rtype: str
         """
-        return self.modification_date.strftime("%Y-%m-%dT%H:%M:%S")
+        return self.create_ISO_date(self.modification_date)
 
     def set_modification_date(self, modification_date=None):
         """
@@ -350,7 +350,7 @@ class PasswordSetting(object):
             self.synced = False
         if type(modification_date) == str:
             try:
-                self.modification_date = datetime.strptime(modification_date, "%Y-%m-%dT%H:%M:%S")
+                self.modification_date = self.convert_ISO_date(modification_date)
             except ValueError:
                 print("This date has a wrong format: " + modification_date)
         else:
@@ -634,3 +634,30 @@ class PasswordSetting(object):
             except ValueError:
                 iterations = self.get_iterations()
             self.set_iterations(iterations)
+
+    @staticmethod
+    def convert_ISO_date(date_str):
+        """
+        Converts an ISO date with or without microseconds
+
+        :param date_str:
+        :type date_str: str
+        :return: converted datetime
+        :rtype: datetime
+        """
+        if re.match(r'^(?P<base_date>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}).(?P<microseconds>\d*)$', date_str):
+            return datetime.strptime(date_str, "%Y-%m-%dT%H:%M:%S.%f")
+        else:
+            return datetime.strptime(date_str, "%Y-%m-%dT%H:%M:%S")
+
+    @staticmethod
+    def create_ISO_date(date):
+        """
+        Creates a string in ISO format with microsends (3 digits).
+
+        :param date:
+        :type date: datetime
+        :return: datetime as a string in ISO format with microseconds
+        :rtype: str
+        """
+        return date.strftime("%Y-%m-%dT%H:%M:%S") + ".{0:03d}".format(date.microsecond)

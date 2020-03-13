@@ -15,7 +15,7 @@ class Sync(object):
     :param str username:
     :param str password:
     """
-    def __init__(self, server_url, username, password, cert_filename):
+    def __init__(self, server_url, username, password, cert_filename=None):
         self.server_url = server_url
         self.username = username
         self.password = password
@@ -38,11 +38,16 @@ class Sync(object):
             url = self.server_url + "ajax/read.php"
         else:
             url = self.server_url + "/ajax/read.php"
-        request = requests.post(url,
-                                data="",
-                                headers=self.headers,
-                                verify=os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                                                    self.certificate_filename))
+        if self.certificate_filename is None:
+            request = requests.post(url,
+                                    data="",
+                                    headers=self.headers)
+        else:
+            request = requests.post(url,
+                                    data="",
+                                    headers=self.headers,
+                                    verify=os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                                                        self.certificate_filename))
         if request.status_code == requests.codes.ok:
             received_data = json.loads(request.text)
             if 'status' in received_data and received_data['status']:
@@ -67,11 +72,16 @@ class Sync(object):
             url = self.server_url + "ajax/write.php"
         else:
             url = self.server_url + "/ajax/write.php"
-        response = requests.post(url,
-                                 data={'data': data},
-                                 headers=self.headers,
-                                 verify=os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                                                     self.certificate_filename))
+        if self.certificate_filename is None:
+            response = requests.post(url,
+                                     data={'data': data},
+                                     headers=self.headers)
+        else:
+            response = requests.post(url,
+                                     data={'data': data},
+                                     headers=self.headers,
+                                     verify=os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                                                         self.certificate_filename))
         if response.status_code == requests.codes.ok:
             return True
         else:

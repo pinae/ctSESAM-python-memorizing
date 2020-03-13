@@ -71,7 +71,7 @@ class PasswordSettingsManager(object):
                 setting = self.settings[i]
                 if setting.get_domain() == domain_name:
                     found = True
-                    if datetime.strptime(data_set['mDate'], "%Y-%m-%dT%H:%M:%S") > setting.get_m_date():
+                    if PasswordSetting.create_ISO_date(data_set['mDate']) > setting.get_m_date():
                         setting.load_from_dict(data_set)
                         setting.set_synced(setting.get_domain() in saved_settings['synced'])
                 i += 1
@@ -208,9 +208,9 @@ class PasswordSettingsManager(object):
                 data_set = self.remote_data[domain_name]
                 if 'deleted' in data_set and data_set['deleted']:
                     for i, setting_dict in enumerate(settings_list):
-                        if setting_dict['domain'] == setting_dict['domain'] and datetime.strptime(
-                                data_set['mDate'], "%Y-%m-%dT%H:%M:%S") > datetime.strptime(
-                                setting_dict['mDate'], "%Y-%m-%dT%H:%M:%S"):
+                        if setting_dict['domain'] == setting_dict['domain'] and \
+                                PasswordSetting.convert_ISO_date(data_set['mDate']) > \
+                                PasswordSetting.convert_ISO_date(setting_dict['mDate']):
                             settings_list[i] = data_set
                 if domain_name not in settings_list.keys():
                     settings_list[domain_name] = {
@@ -252,7 +252,7 @@ class PasswordSettingsManager(object):
                         last_modification_date = data_set['mDate']
                     else:
                         last_modification_date = data_set['cDate']
-                    if datetime.strptime(last_modification_date, "%Y-%m-%dT%H:%M:%S") > setting.get_m_date():
+                    if PasswordSetting.convert_ISO_date(last_modification_date) > setting.get_m_date():
                         if 'deleted' in data_set and data_set['deleted']:
                             self.settings.pop(i)
                         else:
@@ -279,7 +279,7 @@ class PasswordSettingsManager(object):
                         last_modification_date = data_set['mDate']
                     else:
                         last_modification_date = data_set['cDate']
-                    if setting.get_m_date() >= datetime.strptime(last_modification_date, "%Y-%m-%dT%H:%M:%S"):
+                    if setting.get_m_date() >= PasswordSetting.convert_ISO_date(last_modification_date):
                         self.update_remote = True
             if not found:
                 self.update_remote = True

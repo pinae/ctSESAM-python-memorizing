@@ -18,7 +18,7 @@ class SyncManager(object):
         self.server_address = ""
         self.username = ""
         self.password = ""
-        self.certificate = ""
+        self.certificate = None
         self.certificate_file = None
         self.sync = None
 
@@ -38,10 +38,21 @@ class SyncManager(object):
                 "server-address": self.server_address,
                 "username": self.username,
                 "password": self.password,
-                "certificate": self.certificate
+                "certificate": self.certificate if self.certificate is not None else ""
             }).encode('utf-8'))
         else:
             return b''
+
+    def create_certificate_file_if_needed(self):
+        """
+        creates a temporary file with the certificate data if self.certificate is not None
+        """
+        if self.certificate_file:
+            self.certificate_file.close()
+        if self.certificate is not None:
+            self.certificate_file = NamedTemporaryFile()
+            self.certificate_file.write(self.certificate.encode('utf-8'))
+            self.certificate_file.seek(0)
 
     def load_binary_sync_settings(self, data):
         """
@@ -52,17 +63,14 @@ class SyncManager(object):
         settings_dict = json.loads(str(Packer.decompress(data), encoding='utf-8'))
         if "server-address" in settings_dict and \
            "username" in settings_dict and \
-           "password" in settings_dict and \
-           "certificate" in settings_dict:
+           "password" in settings_dict:
             self.server_address = settings_dict["server-address"]
             self.username = settings_dict["username"]
             self.password = settings_dict["password"]
-            self.certificate = settings_dict["certificate"]
-            if self.certificate_file:
-                self.certificate_file.close()
-            self.certificate_file = NamedTemporaryFile()
-            self.certificate_file.write(self.certificate.encode('utf-8'))
-            self.certificate_file.seek(0)
+            self.certificate = None
+            if "certificate" in settings_dict:
+                self.certificate = settings_dict["certificate"] if len(settings_dict["certificate"]) > 0 else None
+            self.create_certificate_file_if_needed()
             self.create_sync()
 
     def ask_for_sync_settings(self):
@@ -73,16 +81,17 @@ class SyncManager(object):
         self.server_address = input("URL: ")
         self.username = input("Benutzername: ")
         self.password = input("Passwort: ")
-        line = input("Zertifikat oder Zertifikatskette im .pem-Format (beenden mit einer Leerzeile): ")
+        print("Zertifikat oder Zertifikatskette im .pem-Format (beenden mit einer Leerzeile): ")
+        line = input("Einfach mit Enter leer lassen, falls Ihr Sync-Server kein Self-Signed-Zetifikat benutzt " +
+                     "(Let's Encrypt zum Beispiel): ")
+        self.certificate = ""
         while len(line) > 0:
             self.certificate += line + "\n"
             line = input("")
         self.certificate += line
-        if self.certificate_file:
-            self.certificate_file.close()
-        self.certificate_file = NamedTemporaryFile()
-        self.certificate_file.write(self.certificate.encode('utf-8'))
-        self.certificate_file.seek(0)
+        if len(self.certificate.strip()) == 0:
+            self.certificate = None
+        self.create_certificate_file_if_needed()
         self.create_sync()
 
     def set_server_address(self, url):
@@ -130,7 +139,10 @@ class SyncManager(object):
         """
         creates a sync object.
         """
-        self.sync = Sync(self.server_address, self.username, self.password, self.certificate_file.name)
+        if self.certificate_file is None:
+            self.sync = Sync(self.server_address, self.username, self.password)
+        else:
+            self.sync = Sync(self.server_address, self.username, self.password, self.certificate_file.name)
 
     def has_settings(self):
         """
