@@ -25,13 +25,7 @@ class CtSesam(object):
     :type iterations: int
     """
     def __init__(self, domain, username, kgk, salt="pepper".encode('utf-8'), iterations=4096):
-        start_value = b''
-        for c in domain.encode('utf-8'):
-            start_value += bytes([c])
-        for c in username.encode('utf-8'):
-            start_value += bytes([c])
-        for c in kgk:
-            start_value += bytes([c])
+        start_value = domain.encode('utf-8') + username.encode('utf-8') + kgk
         if iterations <= 0:
             print("Iteration count was below 1. Hashing 4096 times instead.")
             iterations = 4096
