@@ -116,19 +116,19 @@ class TestPasswordSetting(unittest.TestCase):
                    "\"cDate\": \"2001-01-01T02:14:12.000\", \"mDate\": \"2005-01-01T01:14:12.000\"}"
         s = PasswordSetting(json.loads(json_str)["domain"])
         s.load_from_dict(json.loads(json_str))
-        self.assertEquals("unit.test", s.get_domain())
-        self.assertEquals("testilinius", s.get_username())
-        self.assertEquals("interesting note", s.get_notes())
-        self.assertEquals("rtSr?bS,mi", s.get_legacy_password())
-        self.assertEquals("AEIOUaeiou", s.get_character_set())
-        self.assertEquals(5341, s.get_iterations())
-        self.assertEquals("xxxxoxxxxxxxxxxx", s.get_template())
+        self.assertEqual("unit.test", s.get_domain())
+        self.assertEqual("testilinius", s.get_username())
+        self.assertEqual("interesting note", s.get_notes())
+        self.assertEqual("rtSr?bS,mi", s.get_legacy_password())
+        self.assertEqual("AEIOUaeiou", s.get_character_set())
+        self.assertEqual(5341, s.get_iterations())
+        self.assertEqual("xxxxoxxxxxxxxxxx", s.get_template())
         expected_salt = "fascinating".encode('utf-8')
         self.assertEqual(len(expected_salt), len(s.get_salt()))
         for i in range(len(expected_salt)):
             self.assertEqual(expected_salt[i], s.get_salt()[i])
-        self.assertEquals("2001-01-01T02:14:12.000", s.get_creation_date())
-        self.assertEquals("2005-01-01T01:14:12.000", s.get_modification_date())
+        self.assertEqual("2001-01-01T02:14:12.000", s.get_creation_date())
+        self.assertEqual("2005-01-01T01:14:12.000", s.get_modification_date())
 
     def test_get_template(self):
         s = PasswordSetting("unit.test")
