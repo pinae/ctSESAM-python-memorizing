@@ -26,6 +26,7 @@ def create_settings_manager(kgk_mng):
 def decrypt_remote_settings(kgk_mng, settings_mng):
     remote_kgk_manager = KgkManager()
     remote_kgk_manager.update_from_blob(master_password.encode('utf-8'), b64decode(data))
+    kgk_exists = len(settings_manager.preference_manager.get_kgk_block()) == 112
     if kgk_exists and remote_kgk_manager.has_kgk() and kgk_mng.has_kgk() and \
        kgk_mng.get_kgk() != remote_kgk_manager.get_kgk():
         print("Lokal und auf dem Server gibt es unterschiedliche KGKs. Das ist ein Problem!")
@@ -36,6 +37,7 @@ def decrypt_remote_settings(kgk_mng, settings_mng):
             kgk_mng.store_local_kgk_block()
         settings_mng.update_from_export_data(remote_kgk_manager, b64decode(data))
         print("Verbindung erfolgreich getestet.")
+    return kgk_mng, settings_mng
 
 
 def get_domain(cmd_opt_domain):
@@ -103,7 +105,6 @@ if __name__ == "__main__":
         master_password = getpass.getpass(prompt='Masterpasswort: ')
     kgk_manager = KgkManager()
     settings_manager, preference_manager = create_settings_manager(kgk_manager)
-    kgk_exists = len(preference_manager.get_kgk_block()) == 112
     try:
         settings_manager.load_settings(kgk_manager, master_password, args.no_sync)
         if not args.no_sync and (args.update_sync_settings or not settings_manager.sync_manager.has_settings()):
@@ -111,7 +112,7 @@ if __name__ == "__main__":
             print("Teste die Verbindung...")
             pull_successful, data = settings_manager.sync_manager.pull()
             if pull_successful and len(data) > 0:
-                decrypt_remote_settings(kgk_manager, settings_manager)
+                kgk_manager, settings_manager = decrypt_remote_settings(kgk_manager, settings_manager)
             else:
                 print("Es konnte keine Verbindung aufgebaut werden.")
     except ValueError:

@@ -6,7 +6,7 @@ import unittest
 from password_generator import CtSesam
 from password_setting import PasswordSetting
 from hashlib import pbkdf2_hmac
-from binascii import unhexlify, hexlify
+from binascii import unhexlify
 
 
 class TestPBKDF2(unittest.TestCase):
